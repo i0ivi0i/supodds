@@ -1,0 +1,76 @@
+# If you prefer the allow list template instead of the deny list, see community template:
+# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+#
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# agent
+.sisyphus
+.omc
+
+# beads
+.beads
+
+# env file
+.env
+
+#OS
+.DS_Store
+
+# IDEA
+.idea
+.vscode
+.claude
+.cursor
+*.iml
+
+# 工作空间/Agent 本地配置，不纳入版本管理
+.openclaw
+
+# 本地私密 API Key 与凭证（保护敏感资产）
+config/api_keys.json
+config/credentials.json
+*.token.txt
+
+*.pyc
+__pycache__/
+
+# data/已解除屏蔽，纳入 Git 版本管理
+analysis/
+report/
+
+# Graphify 图谱产出：默认忽略整目录，白名单仅暴露核心图谱报告、数据与反思经验
+graphify-out/*
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/graph.json
+!graphify-out/reflections/
+graphify-out/reflections/*
+!graphify-out/reflections/LESSONS.md
+.archify/
+
+# 论文按页转写的中间截图，不纳入版本管理
+.ky-md-work/
+
+# Compound Engineering 本地覆盖与临时工作区
+.compound-engineering/*.local.yaml
+.context/compound-engineering/
+
+# 规划方案文档，不纳入版本管理
+docs/plans/

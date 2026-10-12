@@ -1,0 +1,199 @@
+"""
+校验/测试/test_assembler.py
+【推演源数据】组装器单元测试: 确保 SnapshotAssembler 输出的 Markdown 能 100% 通过物理门禁
+"""
+
+import re
+import unittest
+from pathlib import Path
+from 校验.src.domain.assembler import SnapshotAssembler
+from 校验.src.domain.verifier import SnapshotVerifier
+from 校验.src.application.use_cases import VerifySnapshotUseCase
+
+
+class TestSnapshotAssembler(unittest.TestCase):
+    def setUp(self):
+        self.assembler = SnapshotAssembler()
+        self.use_case = VerifySnapshotUseCase()
+
+    def test_assembled_markdown_passes_full_verification(self):
+        """测试组装器输出的标准【推演源数据】能直接通过用例层完整物理门禁"""
+        data = {
+            "matchId": "2989999",
+            "league": "英超",
+            "homeTeam": "曼城",
+            "awayTeam": "切尔西",
+            "kickoffTime": "2026-10-10 22:00",
+            "sportteryCode": "周六020",
+            "polymarketUrl": "https://polymarket.com/sports/epl/mci-che",
+            "lineupData": "- 主队伤停：\n  - 罗德里 (主力中场，膝伤缺阵)\n- 客队伤停：\n  - 帕尔默 (主力前锋，肌肉拉伤)",
+            "basicStatsText": "- 主队近况（曼城）：主场胜率 80%，场均进球 2.5\n- 客队近况（切尔西）：客场防守稳健，场均失球 1.0\n- 赛事性质与战意博弈：强强对话\n- 赛程陷阱：无\n- 盘路画像：近期赢盘率正常",
+            "europe1x2": [
+                {"zone": "核心做市", "company": cname, "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5, "kelly": [0.93, 0.94, 0.95]}
+                for cname in [
+                    "澳彩", "Crown", "Bet365", "易胜博", "平博", "188Bet", "香港马会",
+                    "威廉希尔", "立博", "Bwin", "Interwetten", "SNAI", "伟德", "必发",
+                    "SBO", "沙巴", "Marathon", "Betway", "Unibet", "Paddy Power", "10Bet",
+                    "中国体彩", "Polymarket"
+                ]
+            ],
+            "澳彩_ah": [("T0 初盘骨架", "10-09 20:00", "半球", 0.90, 0.94, "初始基准"), ("T4 终盘关门", "10-10 19:30", "平半", 0.82, 1.05, "终盘关门锁定")],
+            "皇冠_ah": [("T0 初盘骨架", "10-09 20:00", "半球", 0.90, 0.94, "初始基准"), ("T4 终盘关门", "10-10 19:30", "平半", 0.82, 1.05, "终盘关门锁定")],
+            "Bet365_ah": [("T0 初盘骨架", "10-09 20:00", "半球", 0.90, 0.94, "初始基准"), ("T4 终盘关门", "10-10 19:30", "平半", 0.82, 1.05, "终盘关门锁定")],
+            "易胜博_ah": [("T0 初盘骨架", "10-09 20:00", "半球", 0.90, 0.94, "初始基准"), ("T4 终盘关门", "10-10 19:30", "平半", 0.82, 1.05, "终盘关门锁定")],
+            "平博_ah": [("T0 初盘骨架", "10-09 20:00", "半球", 0.90, 0.94, "初始基准"), ("T4 终盘关门", "10-10 19:30", "平半", 0.82, 1.05, "终盘关门锁定")],
+            "188Bet_ah": [("T0 初盘骨架", "10-09 20:00", "半球", 0.90, 0.94, "初始基准"), ("T4 终盘关门", "10-10 19:30", "平半", 0.82, 1.05, "终盘关门锁定")],
+            "香港马会_ah": [("T0 初盘骨架", "10-09 20:00", "半球", 0.90, 0.94, "初始基准"), ("T4 终盘关门", "10-10 19:30", "平半", 0.82, 1.05, "终盘关门锁定")],
+            "澳彩_ou": [("T0 初盘骨架", "10-09 20:00", "2.5", 0.88, 0.92, "初始平衡"), ("T4 终盘关门", "10-10 19:30", "2.5", 0.95, 0.85, "防守小球")],
+            "皇冠_ou": [("T0 初盘骨架", "10-09 20:00", "2.5", 0.88, 0.92, "初始平衡"), ("T4 终盘关门", "10-10 19:30", "2.5", 0.95, 0.85, "防守小球")],
+            "Bet365_ou": [("T0 初盘骨架", "10-09 20:00", "2.5", 0.88, 0.92, "初始平衡"), ("T4 终盘关门", "10-10 19:30", "2.5", 0.95, 0.85, "防守小球")],
+            "易胜博_ou": [("T0 初盘骨架", "10-09 20:00", "2.5", 0.88, 0.92, "初始平衡"), ("T4 终盘关门", "10-10 19:30", "2.5", 0.95, 0.85, "防守小球")],
+            "平博_ou": [("T0 初盘骨架", "10-09 20:00", "2.5", 0.88, 0.92, "初始平衡"), ("T4 终盘关门", "10-10 19:30", "2.5", 0.95, 0.85, "防守小球")],
+            "188Bet_ou": [("T0 初盘骨架", "10-09 20:00", "2.5", 0.88, 0.92, "初始平衡"), ("T4 终盘关门", "10-10 19:30", "2.5", 0.95, 0.85, "防守小球")],
+            "香港马会_ou": [("T0 初盘骨架", "10-09 20:00", "2.5", 0.88, 0.92, "初始平衡"), ("T4 终盘关门", "10-10 19:30", "2.5", 0.95, 0.85, "防守小球")],
+            "澳彩_eu": [("T0 初盘骨架", "10-09 20:00", 2.05, 3.30, 3.40, "91.20%", "0.92/0.93/0.95", "初始精算"), ("T4 终盘关门", "10-10 19:30", 2.25, 3.35, 3.05, "90.90%", "1.00/0.95/0.85", "主胜设防")],
+            "皇冠_eu": [("T0 初盘骨架", "10-09 20:00", 2.05, 3.30, 3.40, "91.20%", "0.92/0.93/0.95", "初始精算"), ("T4 终盘关门", "10-10 19:30", 2.25, 3.35, 3.05, "90.90%", "1.00/0.95/0.85", "主胜设防")],
+            "Bet365_eu": [("T0 初盘骨架", "10-09 20:00", 2.05, 3.30, 3.40, "91.20%", "0.92/0.93/0.95", "初始精算"), ("T4 终盘关门", "10-10 19:30", 2.25, 3.35, 3.05, "90.90%", "1.00/0.95/0.85", "主胜设防")],
+            "易胜博_eu": [("T0 初盘骨架", "10-09 20:00", 2.05, 3.30, 3.40, "91.20%", "0.92/0.93/0.95", "初始精算"), ("T4 终盘关门", "10-10 19:30", 2.25, 3.35, 3.05, "90.90%", "1.00/0.95/0.85", "主胜设防")],
+            "平博_eu": [("T0 初盘骨架", "10-09 20:00", 2.05, 3.30, 3.40, "91.20%", "0.92/0.93/0.95", "初始精算"), ("T4 终盘关门", "10-10 19:30", 2.25, 3.35, 3.05, "90.90%", "1.00/0.95/0.85", "主胜设防")],
+            "188Bet_eu": [("T0 初盘骨架", "10-09 20:00", 2.05, 3.30, 3.40, "91.20%", "0.92/0.93/0.95", "初始精算"), ("T4 终盘关门", "10-10 19:30", 2.25, 3.35, 3.05, "90.90%", "1.00/0.95/0.85", "主胜设防")],
+            "香港马会_eu": [("T0 初盘骨架", "10-09 20:00", 2.05, 3.30, 3.40, "91.20%", "0.92/0.93/0.95", "初始精算"), ("T4 终盘关门", "10-10 19:30", 2.25, 3.35, 3.05, "90.90%", "1.00/0.95/0.85", "主胜设防")],
+            "correctScores": [
+                ("1:0", 7.50, "0:0", 9.00, "0:1", 8.50),
+                ("2:0", 9.00, "1:1", 6.20, "0:2", 12.00),
+                ("2:1", 8.00, "2:2", 13.00, "1:2", 10.00),
+                ("3:0", 15.00, "3:3", 40.00, "0:3", 25.00),
+            ]
+        }
+        md_text = self.assembler.assemble(data)
+        self.assertIn("# 【周六020】英超 曼城 vs 切尔西", md_text)
+        self.assertIn("## 三、欧洲指数百家做市商清单（法定 23 家）", md_text)
+
+        # 解析并执行门禁
+        snap = self.use_case._parse_markdown_snapshot(md_text, "2989999")
+        snap["_raw_content"] = md_text
+        receipt = self.use_case.verifier.verify(snap)
+
+        self.assertTrue(receipt.is_valid, f"验证失败: {[r.message for r in receipt.results if r.status.value == 'FAIL']}")
+        self.assertEqual(receipt.failed_count, 0)
+
+    def test_assembler_filters_alien_bookmakers_and_maps_zones(self):
+        """测试装配器自动过滤外来野鸡机构并正确映射四大战区（严格防超量倾倒）"""
+        data = {
+            "matchId": "2989999",
+            "league": "英超",
+            "homeTeam": "曼城",
+            "awayTeam": "切尔西",
+            "kickoffTime": "2026-10-10 22:00",
+            "sportteryCode": "周六020",
+            "lineupData": "正常",
+            "basicStatsText": "正常",
+            "europe1x2": [
+                # 外来野鸡机构，必须被硬拦截丢弃
+                {"company": "All British Casino", "initialOdds": [10.0, 7.0, 1.2], "initialReturn": 92.0, "liveOdds": [12.0, 8.5, 1.15], "liveReturn": 93.0},
+                {"company": "FlaxCasino", "initialOdds": [10.5, 7.5, 1.19], "initialReturn": 93.5, "liveOdds": [12.5, 8.0, 1.16], "liveReturn": 93.7},
+                {"company": "GogoCasino", "initialOdds": [11.0, 8.5, 1.19], "initialReturn": 95.3, "liveOdds": [11.0, 9.0, 1.18], "liveReturn": 95.2},
+                # 法定 23 家（包含别名测试）
+                {"company": "澳彩", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "皇冠", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "365", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "易胜博", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "平博", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "188", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "马会", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "威廉", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "立博", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "Bwin", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "Interwetten", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "SNAI", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "伟德", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "必发", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "SBO", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "沙巴", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "Marathon", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "Betway", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "Unibet", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "Paddy Power", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "10Bet", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "中国体彩", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+                {"company": "Polymarket", "initialOdds": [1.90, 3.50, 3.80], "initialReturn": 91.5, "liveOdds": [1.95, 3.50, 3.70], "liveReturn": 91.5},
+            ]
+        }
+        md_text = self.assembler.assemble(data)
+        # 严格断言外来野鸡机构被拦截
+        self.assertNotIn("All British Casino", md_text)
+        self.assertNotIn("FlaxCasino", md_text)
+        self.assertNotIn("GogoCasino", md_text)
+
+        # 严格断言战区映射正确，非全量核心做市
+        self.assertIn("| 老庄机构 | SBO |", md_text)
+        self.assertIn("| 论文样本 | Marathon |", md_text)
+        self.assertIn("| 终端履约 | 中国体彩 |", md_text)
+
+        # 严格断言行数收敛为法定 23 家
+        lines = [ln for ln in md_text.splitlines() if ln.startswith("|") and not ("---" in ln or "战区分组" in ln)]
+        # 欧指清单表格最多 23 行
+        euro_rows = [ln for ln in lines if any(z in ln for z in ["核心做市", "老庄机构", "论文样本", "终端履约"])]
+        self.assertEqual(len(euro_rows), 23)
+
+    def test_run_assemble_prints_physical_receipt(self):
+        """测试 CLI run_assemble 生成【推演源数据】时输出包含完整属性的法定收据"""
+        import io
+        import tempfile
+        from unittest.mock import patch
+        from 校验.src.adapter.cli import run_assemble
+
+        data = {
+            "matchId": "2989999",
+            "league": "英超",
+            "homeTeam": "曼城",
+            "awayTeam": "切尔西",
+            "kickoffTime": "2026-10-10 22:00",
+            "sportteryCode": "周六020",
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_p = Path(tmpdir) / "test.json"
+            md_p = Path(tmpdir) / "test.md"
+            import json
+            json_p.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                exit_code = run_assemble(str(json_p), str(md_p))
+                self.assertEqual(exit_code, 0)
+                out = mock_stdout.getvalue()
+                self.assertIn("[PHYSICAL_RECEIPT]", out)
+                self.assertIn("sha256=", out)
+                self.assertIn("mtime=", out)
+                self.assertTrue(md_p.exists())
+
+    def test_assembled_markdown_contains_full_23_companies_in_section_4(self):
+        """测试组装器第四节必须全量输出三大战区法定 23 家机构的时序生命周期矩阵"""
+        data = {
+            "matchId": "2989999",
+            "league": "英超",
+            "homeTeam": "曼城",
+            "awayTeam": "切尔西",
+            "kickoffTime": "2026-10-10 22:00",
+            "sportteryCode": "周六020",
+        }
+        md_text = self.assembler.assemble(data)
+
+        # 严格断言三大战区标头齐全
+        self.assertIn("### 第一战区：欧亚双盘全能做市商", md_text)
+        self.assertIn("### 第二战区：欧洲大陆与国际纯欧指做市商", md_text)
+        self.assertIn("### 第三战区：终端履约实盘标的", md_text)
+
+        # 严格断言法定 23 家机构全部有独立章节时序
+        from 校验.src.domain.assembler import LEGAL_23_COMPANIES
+        for cname in LEGAL_23_COMPANIES.keys():
+            self.assertIn(f"{cname}", md_text, f"缺少机构章节: {cname}")
+
+        # 校验第四节内章节数量严格对应 23 家
+        sec4_content = md_text.split("## 四、")[1].split("## 五、")[0]
+        sec4_blocks = [x.strip() for x in re.findall(r"\n###\s+\d+[\.、\s]+([^\n\(]+)", sec4_content)]
+        self.assertEqual(len(sec4_blocks), 23, f"时序章节数量不符 (期望23家, 实际{len(sec4_blocks)}家: {sec4_blocks})")
+
+
+if __name__ == "__main__":
+    unittest.main()
+
