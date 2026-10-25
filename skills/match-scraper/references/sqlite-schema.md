@@ -1,8 +1,8 @@
-# `data/{销售日}/{matchId}.db` SQLite SSOT Schema
+# `data/{销售日}/{matchId}.db`：最终七表
 
-> 2026-10-24 起，比赛数据的唯一持久化真相是 SQLite。Scrapling 导出仓库外临时 JSONL，ETLX `-file` 只载入 `ENDPOINT_PAYLOAD`，其余步骤只读 `DB.endpoint_payload`；raw JSON 不再是 active 分析路径。
+> 2026-10-25 起，比赛数据的唯一持久化真相是 **最终七表 SQLite**。Staging 只做构建期解析，不是持久化分析源。
 
-## 1. 装配顺序
+## 1. 单工作库装配
 
 ```bash
 mkdir -p data/.staging
@@ -13,118 +13,76 @@ ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd6
 "$ETLX" -config data/pipeline.md -date {销售日} -skip ENDPOINT_PAYLOAD
 ```
 
-`data/schema.sql` 只建 STRICT、主键、非空、`CHECK` 物理表，不包含视图。第二阶段 `BUSINESS_TABLES` 生成四个中文业务表，`VIEWS` 生成 13 个只读 `v_*` 视图。门禁 `violations=0` 且外部只读复核通过后，才可把 staging 提升为 `data/{销售日}/{matchId}.db`。
+- `data/schema.sql`：同时建 staging 15 张表和最终 7 张业务表；全部 `STRICT`，0 视图。
+- 只有一个工作库 `data/.staging/build.db`；没有 `schema_final.sql`、没有第二个 `final.db`。
+- `PUBLISH_FINAL`：把 7 张最终表写回同一个工作库。
+- `GATE_LIVE` 与 `GATE_FINAL`：`violations=0` 后，删除 staging 视图与 staging 表；`VACUUM` 回收空闲页；只留七张业务表。
+- 晋升：备份旧 `data/{销售日}/{matchId}.db`，再把清理后的 `build.db` 复制到活动路径。
 
-## 2. `endpoint_payload`（唯一原始存证表）
+清理命令见 `skills/match-scraper/SKILL.md`。清理后再跑一次 `-only GATE_FINAL`，最后复制到 `data/{销售日}/{matchId}.db`。
 
-每行对应一个分析端点：
+## 2. 最终七表
 
-| 字段 | 说明 |
-| :--- | :--- |
-| `match_id` | 球探 `matchId` |
-| `endpoint_key` | 27 个分析端点 key 之一 |
-| `content_type` | `javascript` / `html` / `json` / `markdown` / `empty` |
-| `content` | 真实响应文本 |
-| `chars` | `content` 字符数 |
-| `raw_sha256` | JSONL 原始字节 SHA256 |
-| `sha256` | `content` 的 SHA256 |
-| `source_url` | 采集 URL |
-| `fetched_at` | 采集时间 |
-| `status` | HTTP 状态 |
-| `state` | `supported` / `not_offered` / `failed` |
-| `empty_state` | 空状态说明；无则为 `NULL` |
+| 表 | 一行代表 | 本场样本 |
+| :--- | :--- | ---: |
+| `球队基本情况` | 比赛、球员、伤停、技术统计、端点状态、机构状态 | 375 |
+| `欧指` | 一家机构的欧指初即盘 | 21 |
+| `欧指变盘` | 一条源欧指变盘记录 | 1,709 |
+| `亚盘` | 一家机构的一个亚盘报价 | 22 |
+| `亚盘变盘` | 一条源亚盘变盘记录 | 348 |
+| `大小球` | 一家机构的一个大小球报价 | 24 |
+| `大小球变盘` | 一条源大小球变盘记录 | 262 |
 
-约束：27 个分析端点、27 个 distinct key；`polymarket.json` 不在该表。`chars = length(content)`，`sha256 = sha256(content)`。
+`球队基本情况` = 1 比赛信息 + 阵容 + 伤停 + 技术统计 + 27 数据状态 + 22 机构状态。本场为 1+40+9+276+27+22=375。阵型源值为空，不生成阵型空行。
 
-## 3. JSONL 行形状
+`欧指变盘` = `1x2d.js` 1,074 行 + `eu_*` 端点 635 行 = 1,709 行；`来源端点` 区分来源，不按赔率相等去重。本场实际有 6 个 `eu_*` 端点，所以来源端点共 7 个；门禁按 staging 的实际 distinct 端点数核对，不写死 8。
 
-```json
-{"match_id":"3003920","endpoint_key":"1x2d.js","content_type":"javascript","content":"...","chars":312540,"raw_sha256":"...","sha256":"...","source_url":"https://txt.titan007.com/1x2/3003920.js","fetched_at":"2026-10-24 12:10:00","status":200,"state":"supported","empty_state":null,"extraction_type":"text"}
-```
+## 3. 关键列与顺序
 
-`extraction_type` 只用于采集分类，ETLX 载入时可不写入目标表。
+- `球队基本情况`：`数据类型` 只允许 `比赛信息`、`阵容`、`伤停`、`技术统计`、`数据状态`、`机构状态`；`数据指纹`、`采集时间` 只放在 `数据状态` 行。
+- `欧指`/`欧指变盘`：21 家机构；`机构顺序` 固定为 澳彩(80)、皇冠(545)、Bet365(281)、易胜博(90)、平博(177)、香港马会(432)、威廉希尔(115)、立博(82)、伟德(81)、Interwetten(104)、Bwin(255)、SNAI(110)、必发(2)、利记(474)、沙巴(649)、马拉松(800)、必威(482)、优胜客(386)、Paddy Power(826)、10Bet(16)、中国体彩(1129)。
+- `亚盘`/`亚盘变盘`/`大小球`/`大小球变盘`：7 家机构；`机构顺序` 固定为 澳彩(1)、皇冠(3)、Bet365(8)、易胜博(12)、188Bet(42)、平博(47)、香港马会(48)。
+- 明细读取一律显式 `ORDER BY "机构顺序", "变盘时间", "源序号"`；不依赖 SQLite 物理行序。
+- `源序号` 是 ETLX 源表技术行号，不是球探字段；只做同一分钟稳定排序，不代替 `变盘时间`。
+- `盘口` 保留源端文本（如 `1/1.5`），不转成自算数字。
 
-## 4. 派生表
+## 4. 原值直搬
 
-- `match_meta`：队名、联赛、竞彩编号、开球时间；来自 `meta.md`，不是新的网络端点。
-- `euro_snapshot`：21 家欧指初即盘。
-- `euro_history`：欧指变盘时序。
-- `asian_odds` / `over_under`：亚盘与大小球初即全景。
-- `ah_history` / `ou_history` / `eu_detail_history`：7 家机构变盘流水。
-- `injury` / `lineup` / `team_stats`：伤停、首发与攻防技统。
-- `bookmaker_slots`：22 家博彩做市商槽位；`v_bookmaker_slots` 另映射 Polymarket 参考槽位，共 23 家。
-- `endpoint_parse_status` / `build_manifest`：端点解析状态与构建清单。
+七表只做源值投影：不写 `MIN/MAX/COUNT/SUM/AVG`、概率换算、缺失值填充、跨行聚合或预测列。`机构` 中文名和 `机构顺序` 只是显示标签，不改变数值。统计和推演由外部 AI 读取原值后现场完成。
 
-## 5. 业务表与只读视图
+## 5. EvoOntology 边界
 
-### 5.1 四个业务入口（人、机器、AI 共用）
+EvoOntology v6 的 34 条映射全部指向这 7 张表；`sqlite_table` 是唯一定位方式，不再使用 `v_*` 视图。EvoOntology 只做只读看数，不思考、不评分、不推演。
 
-第一屏只看四张业务表。它们只放事实，不放预测、推荐、信心、评分或胜负判断。
-
-| 入口表 | 一行代表 | 主要列 |
-| :--- | :--- | :--- |
-| `球队基本情况` | 比赛信息一行、首发/替补、伤停 | `数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`姓名`、`伤停原因` |
-| `欧指` | 一家机构的欧指当前盘 | 初盘主平客、最新主平客、初盘/最新返还率(%) |
-| `亚盘` | 一家机构的亚盘当前盘 | 初盘主水/盘口/客水、最新主水/盘口/客水、更新时间 |
-| `大小球` | 一家机构的大小球当前盘 | 初盘大球/盘口/小球、最新大球/盘口/小球、更新时间 |
-
-`欧指变盘` 是 `欧指` 的下钻明细，不是第五个一级入口：一行一条原始变盘记录，保留机构、源序号、变盘时间、主胜赔率、平局赔率、客胜赔率和三列凯利。它不按时间戳去重，同一分钟的多笔记录用 `源序号` 保留源顺序；整张表按固定机构优先级（澳彩、皇冠、Bet365、易胜博、平博、香港马会、威廉希尔、立博、伟德、Interwetten、Bwin、SNAI、必发、利记、沙巴、马拉松、必威、优胜客、Paddy Power、10Bet、中国体彩）分组，**每家机构内部按 `变盘时间 ASC, 源序号 DESC` 排列**，同一机构的时间不会倒流；不同机构之间不按全局时间混排。皇冠、平博、Bet365 的完整波动都在这里。
-
-`球队基本情况` 不是一行摘要；它用 1 条比赛信息、40 条阵容、9 条伤停按“数据类型”展开，共 50 行。每行只代表一个实体：比赛、球员或伤员。位置、阵型、胜率、胜平负、联赛积分、预期进球等统计不进入这个抽屉。
-
-四张入口表与 `欧指变盘` 由 `data/pipeline.md` 的 `BUSINESS_TABLES` 生成，不是 SQLite 视图；13 个 `v_*` 明细视图由 `VIEWS` 生成。
-
-业务表只做原值直搬：源表有什么字段就展示什么字段，禁止 `MIN/MAX/COUNT/SUM/AVG`、概率换算、缺失值填充或跨行聚合。`机构` 中文名和排序只是显示标签，不改变数值；原始数值以 `endpoint_payload` 和对应源表为准。需要统计时由外部 AI 在读取后自行计算，不能把计算结果写回业务表冒充原始数据。
-
-### 5.2 下钻与原始层
-
-需要逐笔流水时，从四入口下钻：
-
-- 欧指：`欧指变盘`、`v_euro_history`、`v_eu_detail_history`
-- 亚盘：`v_ah_history`
-- 大小球：`v_ou_history`
-- 阵容/伤停/技统：`v_lineup`、`v_injury`、`v_team_stats`
-
-历史视图按 `ts_iso` 升序：初盘最早，变盘在中间，最新盘是最后一笔。不要用 `source_index` 代替时间。
-
-原始证据层（`endpoint_payload`、`endpoint_parse_status`、`build_manifest`）只给审计和排错；四业务表和 EvoOntology 都不读原始层。
-
-### 5.3 EvoOntology 的边界
-
-EvoOntology 的 `sqlite_view` 映射应从四入口或其明确列出的下钻视图开始。它只做只读看数：概念定位、字段定位、取事实数据。它不负责思考、分析、推演、评分、推荐或结论；这些由外部 AI 大脑完成。现有 active `v5` 的映射若仍落在明细视图，按“四入口下钻”阅读，不伪造新映射，也不改 active 版本。
-
-机器查询示例（不碰原始层）：
+查询示例：
 
 ```sql
-SELECT "数据类型", "联赛", "主队", "客队", "队伍", "身份", "姓名", "伤停原因" FROM "球队基本情况"
-ORDER BY "数据类型", "队伍";
-SELECT "机构编号", "机构", "最新主胜", "最新平局", "最新客胜" FROM "欧指" ORDER BY "机构编号";
-SELECT "机构编号", "机构", "最新盘口", "最新主水", "最新客水" FROM "亚盘" ORDER BY "机构编号";
-SELECT "机构编号", "机构", "最新盘口", "最新大球", "最新小球" FROM "大小球" ORDER BY "机构编号";
-SELECT "变盘时间", "主胜赔率", "平局赔率", "客胜赔率" FROM "欧指变盘" WHERE "机构编号" = 545 ORDER BY "变盘时间", "源序号" DESC;
-SELECT ts_iso, home, draw, away FROM v_euro_history WHERE cid = 80 ORDER BY ts_iso;
+SELECT "数据类型", "联赛", "主队", "客队", "队伍", "身份", "姓名", "伤停原因"
+FROM "球队基本情况" ORDER BY "数据类型", "队伍", "源序号";
+
+SELECT "机构编号", "机构", "最新主胜", "最新平局", "最新客胜"
+FROM "欧指" ORDER BY "机构顺序";
+
+SELECT "变盘时间", "主胜赔率", "平局赔率", "客胜赔率"
+FROM "欧指变盘" WHERE "机构编号" = 545
+ORDER BY "变盘时间", "源序号" DESC;
+
+SELECT "变盘时间", "主水", "盘口", "客水"
+FROM "亚盘变盘" WHERE "机构编号" = 3
+ORDER BY "变盘时间", "源序号" DESC;
+
+SELECT "数据类型", "项目", "状态", "数据指纹", "采集时间"
+FROM "球队基本情况" WHERE "数据类型" = '数据状态'
+ORDER BY "项目";
 ```
 
-## 6. 最终门禁
+## 6. 最终门禁（清理前）
 
-```sql
-SELECT COUNT(*) AS payloads,
-       COUNT(DISTINCT endpoint_key) AS keys
-FROM endpoint_payload;
--- 期望 27 | 27
+`GATE_FINAL` 在清理前检查七表事实；`violations=0` 后执行清理。清理只删除 staging，不改七表数据；清理后只做只读对象清单与行数复核：
 
-SELECT COUNT(*) FROM endpoint_payload
-WHERE endpoint_key = 'polymarket.json';
--- 期望 0
-
-SELECT COUNT(*) FROM match_meta;
--- 期望 1
-
-SELECT '球队基本情况' AS 业务表, COUNT(*) FROM "球队基本情况"
-UNION ALL SELECT '欧指', COUNT(*) FROM "欧指"
-UNION ALL SELECT '亚盘', COUNT(*) FROM "亚盘"
-UNION ALL SELECT '大小球', COUNT(*) FROM "大小球";
--- 本场期望 50 | 21 | 22 | 24（球队明细为 1 条比赛信息 + 40 条阵容 + 9 条伤停）
-```
-
-再检查 `endpoint_parse_status` 无 `failed`、`v_bookmaker_slots` 23 家均有合法状态、`PRAGMA integrity_check` 返回 `ok`。
+- 最终库只有 7 张表、0 视图，没有 `endpoint_payload`、源表或 `v_*`。
+- `球队基本情况` 行数 = 1 + staging `lineup` + `injury` + `team_stats` + 27 + 22。
+- `欧指` = 21；`欧指变盘` = staging `euro_history` + `eu_detail_history`。
+- `亚盘` / `大小球` 非空；`亚盘变盘` = staging `ah_history`；`大小球变盘` = staging `ou_history`。
+- `数据状态` 27 行、27 个 distinct 来源端点；`机构状态` 22 行、22 家机构。
+- `PRAGMA integrity_check` 返回 `ok`。

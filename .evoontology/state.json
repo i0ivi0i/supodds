@@ -1,7 +1,7 @@
 {
   "checkpoint_trajectory": null,
   "checkpoint_time": "2026-10-17T08:21:02.726524+00:00",
-  "evolution_due": false,
+  "evolution_due": true,
   "thresholds": {
     "min_new_trajectories": 30,
     "min_days": 7

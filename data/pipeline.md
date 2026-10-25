@@ -1,4 +1,4 @@
-<!-- One-file ETLX pipeline for one match at a time. data/schema.sql creates the typed physical tables only; this file lands the 27 analysis endpoints through the official ETLX -file handoff into the fixed data/.staging/build.db, derives every analysis table from DB.endpoint_payload, builds the four Chinese business tables, and creates all 13 read-only v_* views. A from-zero rebuild requires the schema bootstrap because ETLX's DuckDB SQLite attach cannot execute SQLite STRICT or foreign-key DDL. -->
+<!-- One-file ETLX pipeline for one match at a time. data/schema.sql creates the typed physical tables and the seven final tables; this file lands the 27 analysis endpoints through the official ETLX -file handoff into the fixed data/.staging/build.db, derives every source table from DB.endpoint_payload, writes the seven final tables in place, and gates them. After ETLX, a short SQLite cleanup removes every staging table and view, so the promoted .db contains exactly the seven tables. A from-zero rebuild requires the schema bootstrap because ETLX's DuckDB SQLite attach cannot execute SQLite STRICT or foreign-key DDL. -->
 
 # PIPELINE
 
@@ -1059,17 +1059,17 @@ SELECT
 FROM all_rows;
 ```
 
-## BUSINESS_TABLES
+## PUBLISH_FINAL
 
 ```yaml
-name: BUSINESS_TABLES
+name: PUBLISH_FINAL
 table: "球队基本情况"
 load_conn: "duckdb:"
 load_before_sql:
   - INSTALL sqlite
   - "ATTACH 'data/.staging/build.db' AS DB (TYPE SQLITE)"
   - USE DB
-load_sql: land_business_tables
+load_sql: publish_final
 load_after_sql:
   - USE memory
   - DETACH DB
@@ -1078,221 +1078,189 @@ active: true
 ```
 
 ```sql
--- land_business_tables
-CREATE OR REPLACE TABLE "球队基本情况" AS
+-- publish_final
+-- Write only business facts into the seven final tables in the same working DB.
+-- Staging tables remain until the post-ETLX SQLite cleanup.
+INSERT INTO DB."球队基本情况" (
+  "比赛ID", "数据类型", "联赛", "主队", "客队", "开球时间", "竞彩编号", "销售日",
+  "队伍", "身份", "号码", "姓名", "球员ID", "位置", "队长", "球员类型", "伤停原因",
+  "项目", "指标", "数值", "文本值", "机构编号", "机构", "状态", "数据指纹", "采集时间",
+  "源序号", "来源端点"
+)
 SELECT
-  x."比赛ID",
-  x."数据类型",
-  x."联赛",
-  x."主队",
-  x."客队",
-  x."开球时间",
-  x."竞彩编号",
-  x."销售日",
-  x."队伍",
-  x."身份",
-  x."姓名",
-  x."伤停原因"
-FROM (
-  SELECT
-    m.match_id AS "比赛ID", '比赛信息' AS "数据类型",
-    m.league AS "联赛", m.home_team AS "主队", m.away_team AS "客队",
-    m.kickoff_at AS "开球时间", m.match_no AS "竞彩编号", m.sales_date AS "销售日",
-    '比赛' AS "队伍", NULL AS "身份", NULL AS "姓名",
-    NULL AS "伤停原因", 0 AS "排序"
-  FROM match_meta m
-  UNION ALL
-  SELECT
-    l.match_id,
-    '阵容',
-    NULL, NULL, NULL, NULL, NULL, NULL,
-    CASE l.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
-    CASE l.role WHEN 'starter' THEN '首发' WHEN 'bench' THEN '替补' ELSE '其他身份' END,
-    l.name,
-    NULL,
-    CASE l.role WHEN 'starter' THEN 0 ELSE 10000 END + l.source_index
-  FROM lineup l
-  UNION ALL
-  SELECT
-    i.match_id,
-    '伤停',
-    NULL, NULL, NULL, NULL, NULL, NULL,
-    CASE i.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
-    NULL,
-    i.name,
-    i.injury_reason,
-    i.source_index
-  FROM injury i
-) x
-ORDER BY
-  CASE x."数据类型"
-    WHEN '比赛信息' THEN 1
-    WHEN '阵容' THEN 2
-    WHEN '伤停' THEN 3
-    ELSE 4
-  END,
-  CASE x."队伍"
-    WHEN '比赛' THEN 0
-    WHEN '主队' THEN 1
-    WHEN '客队' THEN 2
-    ELSE 3
-  END,
-  x."排序";
+  m.match_id, '比赛信息', m.league, m.home_team, m.away_team, m.kickoff_at, m.match_no, m.sales_date,
+  '比赛', '比赛', NULL, '', NULL, NULL, NULL, NULL, NULL,
+  '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  0, 'meta.md'
+FROM match_meta m
+UNION ALL
+SELECT
+  l.match_id, '阵容', NULL, NULL, NULL, NULL, NULL, NULL,
+  CASE l.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
+  CASE l.role WHEN 'starter' THEN '首发' WHEN 'bench' THEN '替补' ELSE '其他身份' END,
+  l.number, l.name, l.player_id, l.position, NULL, NULL, NULL,
+  '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  l.source_index, l.source_endpoint
+FROM lineup l
+UNION ALL
+SELECT
+  i.match_id, '伤停', NULL, NULL, NULL, NULL, NULL, NULL,
+  CASE i.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
+  '伤停', i.number, i.name, i.player_id, i.position, i.captain_type, i.player_kind, i.injury_reason,
+  '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  i.source_index, i.source_endpoint
+FROM injury i
+UNION ALL
+SELECT
+  s.match_id, '技术统计', NULL, NULL, NULL, NULL, NULL, NULL,
+  CASE s.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '比赛' END,
+  '技术统计', NULL, s.item, NULL, NULL, NULL, NULL, NULL,
+  s.section, s.metric, s.value, s.text_value, NULL, NULL, NULL, NULL, NULL,
+  s.source_index, s.source_endpoint
+FROM team_stats s
+UNION ALL
+SELECT
+  p.match_id, '数据状态', NULL, NULL, NULL, NULL, NULL, NULL,
+  '比赛', '数据状态', NULL, '', NULL, NULL, NULL, NULL, NULL,
+  '数据状态', NULL, CAST(p.row_count AS REAL), p.status, NULL, NULL, p.status, q.sha256, q.fetched_at,
+  ROW_NUMBER() OVER (ORDER BY p.endpoint_key) - 1, p.endpoint_key
+FROM endpoint_parse_status p
+JOIN endpoint_payload q
+  ON q.match_id = p.match_id AND q.endpoint_key = p.endpoint_key
+UNION ALL
+SELECT
+  b.match_id, '机构状态', NULL, NULL, NULL, NULL, NULL, NULL,
+  '比赛', '机构状态', NULL, '', NULL, NULL, NULL, NULL, NULL,
+  '机构槽位', NULL, NULL, b.evidence, b.euro_cid, b.bookmaker, b.eu_status, NULL, NULL,
+  ROW_NUMBER() OVER (ORDER BY b.bookmaker) - 1, 'bookmaker_slots'
+FROM bookmaker_slots b;
 
--- One row per bookmaker cid. Only direct source snapshot fields are exposed.
--- No MIN/MAX/COUNT, no derived probability, no filled missing values.
-CREATE OR REPLACE TABLE "欧指" AS
+INSERT INTO DB."欧指" (
+  "比赛ID", "机构编号", "机构", "机构顺序",
+  "初盘主胜", "初盘平局", "初盘客胜", "初盘返还率(%)",
+  "最新主胜", "最新平局", "最新客胜", "最新返还率(%)", "来源端点"
+)
 SELECT
-  e.match_id AS "比赛ID",
-  e.cid AS "机构编号",
-  CASE e.bookmaker
-    WHEN 'Macauslot' THEN '澳彩'
-    WHEN 'Crown' THEN '皇冠'
-    WHEN 'Bet 365' THEN 'Bet365'
-    WHEN 'Easybets' THEN '易胜博'
-    WHEN 'Pinnacle' THEN '平博'
-    WHEN 'HK Jockey Club' THEN '香港马会'
-    WHEN 'Sbobet' THEN '利记'
-    WHEN 'IBCBET' THEN '沙巴'
-    WHEN 'Lottery Official' THEN '中国体彩'
-    WHEN 'William Hill' THEN '威廉希尔'
-    WHEN 'Ladbrokes' THEN '立博'
-    WHEN 'Vcbet' THEN '伟德'
-    WHEN 'Betfair' THEN '必发'
-    WHEN '10BET' THEN '10Bet'
-    WHEN 'Unibet' THEN '优胜客'
-    WHEN 'Marathon' THEN '马拉松'
-    WHEN 'Betway' THEN '必威'
+  e.match_id, e.cid,
+  CASE e.cid
+    WHEN 80 THEN '澳彩' WHEN 545 THEN '皇冠' WHEN 281 THEN 'Bet365'
+    WHEN 90 THEN '易胜博' WHEN 177 THEN '平博' WHEN 432 THEN '香港马会'
+    WHEN 115 THEN '威廉希尔' WHEN 82 THEN '立博' WHEN 81 THEN '伟德'
+    WHEN 104 THEN 'Interwetten' WHEN 255 THEN 'Bwin' WHEN 110 THEN 'SNAI'
+    WHEN 2 THEN '必发' WHEN 474 THEN '利记' WHEN 649 THEN '沙巴'
+    WHEN 800 THEN '马拉松' WHEN 482 THEN '必威' WHEN 386 THEN '优胜客'
+    WHEN 826 THEN 'Paddy Power' WHEN 16 THEN '10Bet' WHEN 1129 THEN '中国体彩'
     ELSE e.bookmaker
-  END AS "机构",
-  e.initial_home AS "初盘主胜",
-  e.initial_draw AS "初盘平局",
-  e.initial_away AS "初盘客胜",
-  e.initial_return AS "初盘返还率(%)",
-  e.latest_home AS "最新主胜",
-  e.latest_draw AS "最新平局",
-  e.latest_away AS "最新客胜",
-  e.latest_return AS "最新返还率(%)"
-FROM euro_snapshot e
-ORDER BY CASE e.cid
-  WHEN 80 THEN 1
-  WHEN 545 THEN 2
-  WHEN 281 THEN 3
-  WHEN 90 THEN 4
-  WHEN 177 THEN 5
-  WHEN 432 THEN 6
-  WHEN 115 THEN 7
-  WHEN 82 THEN 8
-  WHEN 81 THEN 9
-  WHEN 104 THEN 10
-  WHEN 255 THEN 11
-  WHEN 110 THEN 12
-  WHEN 2 THEN 13
-  WHEN 474 THEN 14
-  WHEN 649 THEN 15
-  WHEN 800 THEN 16
-  WHEN 482 THEN 17
-  WHEN 386 THEN 18
-  WHEN 826 THEN 19
-  WHEN 16 THEN 20
-  WHEN 1129 THEN 21
-  ELSE 99
-END, e.cid;
+  END,
+  CASE e.cid
+    WHEN 80 THEN 1 WHEN 545 THEN 2 WHEN 281 THEN 3 WHEN 90 THEN 4
+    WHEN 177 THEN 5 WHEN 432 THEN 6 WHEN 115 THEN 7 WHEN 82 THEN 8
+    WHEN 81 THEN 9 WHEN 104 THEN 10 WHEN 255 THEN 11 WHEN 110 THEN 12
+    WHEN 2 THEN 13 WHEN 474 THEN 14 WHEN 649 THEN 15 WHEN 800 THEN 16
+    WHEN 482 THEN 17 WHEN 386 THEN 18 WHEN 826 THEN 19 WHEN 16 THEN 20
+    WHEN 1129 THEN 21 ELSE 99
+  END,
+  e.initial_home, e.initial_draw, e.initial_away, e.initial_return,
+  e.latest_home, e.latest_draw, e.latest_away, e.latest_return, '1x2d.js'
+FROM euro_snapshot e;
 
--- Full euro time series: one row per source change. Never dedupe timestamps.
--- Source array order is arbitrary, so use the same fixed bookmaker priority
--- as 欧指; inside each bookmaker, time always moves forward.
-CREATE OR REPLACE TABLE "欧指变盘" AS
+INSERT INTO DB."欧指变盘" (
+  "比赛ID", "机构编号", "机构", "机构顺序", "源序号", "变盘时间",
+  "主胜赔率", "平局赔率", "客胜赔率", "凯利主胜", "凯利平局", "凯利客胜", "来源端点"
+)
 SELECT
-  h.match_id AS "比赛ID",
-  h.cid AS "机构编号",
+  h.match_id, h.cid,
   CASE h.cid
-    WHEN 80 THEN '澳彩'
-    WHEN 545 THEN '皇冠'
-    WHEN 281 THEN 'Bet365'
-    WHEN 90 THEN '易胜博'
-    WHEN 177 THEN '平博'
-    WHEN 432 THEN '香港马会'
-    WHEN 115 THEN '威廉希尔'
-    WHEN 82 THEN '立博'
-    WHEN 81 THEN '伟德'
-    WHEN 104 THEN 'Interwetten'
-    WHEN 255 THEN 'Bwin'
-    WHEN 110 THEN 'SNAI'
-    WHEN 2 THEN '必发'
-    WHEN 474 THEN '利记'
-    WHEN 649 THEN '沙巴'
-    WHEN 800 THEN '马拉松'
-    WHEN 482 THEN '必威'
-    WHEN 386 THEN '优胜客'
-    WHEN 826 THEN 'Paddy Power'
-    WHEN 16 THEN '10Bet'
-    WHEN 1129 THEN '中国体彩'
+    WHEN 80 THEN '澳彩' WHEN 545 THEN '皇冠' WHEN 281 THEN 'Bet365'
+    WHEN 90 THEN '易胜博' WHEN 177 THEN '平博' WHEN 432 THEN '香港马会'
+    WHEN 115 THEN '威廉希尔' WHEN 82 THEN '立博' WHEN 81 THEN '伟德'
+    WHEN 104 THEN 'Interwetten' WHEN 255 THEN 'Bwin' WHEN 110 THEN 'SNAI'
+    WHEN 2 THEN '必发' WHEN 474 THEN '利记' WHEN 649 THEN '沙巴'
+    WHEN 800 THEN '马拉松' WHEN 482 THEN '必威' WHEN 386 THEN '优胜客'
+    WHEN 826 THEN 'Paddy Power' WHEN 16 THEN '10Bet' WHEN 1129 THEN '中国体彩'
     ELSE CAST(h.cid AS VARCHAR)
-  END AS "机构",
-  h.source_index AS "源序号",
-  h.ts_iso AS "变盘时间",
-  h.home AS "主胜赔率",
-  h.draw AS "平局赔率",
-  h.away AS "客胜赔率",
-  h.kelly_home AS "凯利主胜",
-  h.kelly_draw AS "凯利平局",
-  h.kelly_away AS "凯利客胜"
+  END,
+  CASE h.cid
+    WHEN 80 THEN 1 WHEN 545 THEN 2 WHEN 281 THEN 3 WHEN 90 THEN 4
+    WHEN 177 THEN 5 WHEN 432 THEN 6 WHEN 115 THEN 7 WHEN 82 THEN 8
+    WHEN 81 THEN 9 WHEN 104 THEN 10 WHEN 255 THEN 11 WHEN 110 THEN 12
+    WHEN 2 THEN 13 WHEN 474 THEN 14 WHEN 649 THEN 15 WHEN 800 THEN 16
+    WHEN 482 THEN 17 WHEN 386 THEN 18 WHEN 826 THEN 19 WHEN 16 THEN 20
+    WHEN 1129 THEN 21 ELSE 99
+  END,
+  h.source_index, h.ts_iso, h.home, h.draw, h.away,
+  h.kelly_home, h.kelly_draw, h.kelly_away, '1x2d.js'
 FROM euro_history h
-ORDER BY CASE h.cid
-  WHEN 80 THEN 1
-  WHEN 545 THEN 2
-  WHEN 281 THEN 3
-  WHEN 90 THEN 4
-  WHEN 177 THEN 5
-  WHEN 432 THEN 6
-  WHEN 115 THEN 7
-  WHEN 82 THEN 8
-  WHEN 81 THEN 9
-  WHEN 104 THEN 10
-  WHEN 255 THEN 11
-  WHEN 110 THEN 12
-  WHEN 2 THEN 13
-  WHEN 474 THEN 14
-  WHEN 649 THEN 15
-  WHEN 800 THEN 16
-  WHEN 482 THEN 17
-  WHEN 386 THEN 18
-  WHEN 826 THEN 19
-  WHEN 16 THEN 20
-  WHEN 1129 THEN 21
-  ELSE 99
-END, h.ts_iso ASC, h.source_index DESC;
-
-CREATE OR REPLACE TABLE "亚盘" AS
+UNION ALL
 SELECT
-  a.match_id AS "比赛ID",
-  a.company_id AS "机构编号",
-  a.bookmaker AS "机构",
-  a.first_home AS "初盘主水",
-  a.first_line AS "初盘盘口",
-  a.first_away AS "初盘客水",
-  a.home AS "最新主水",
-  a.line AS "最新盘口",
-  a.away AS "最新客水",
-  a.modify_iso AS "更新时间"
-FROM asian_odds a
-ORDER BY a.company_id, a.odds_id;
+  d.match_id, d.company_id,
+  CASE d.company_id
+    WHEN 80 THEN '澳彩' WHEN 545 THEN '皇冠' WHEN 281 THEN 'Bet365'
+    WHEN 90 THEN '易胜博' WHEN 177 THEN '平博' WHEN 432 THEN '香港马会'
+    WHEN 115 THEN '威廉希尔' WHEN 82 THEN '立博' WHEN 81 THEN '伟德'
+    WHEN 104 THEN 'Interwetten' WHEN 255 THEN 'Bwin' WHEN 110 THEN 'SNAI'
+    WHEN 2 THEN '必发' WHEN 474 THEN '利记' WHEN 649 THEN '沙巴'
+    WHEN 800 THEN '马拉松' WHEN 482 THEN '必威' WHEN 386 THEN '优胜客'
+    WHEN 826 THEN 'Paddy Power' WHEN 16 THEN '10Bet' WHEN 1129 THEN '中国体彩'
+    ELSE CAST(d.company_id AS VARCHAR)
+  END,
+  CASE d.company_id
+    WHEN 80 THEN 1 WHEN 545 THEN 2 WHEN 281 THEN 3 WHEN 90 THEN 4
+    WHEN 177 THEN 5 WHEN 432 THEN 6 WHEN 115 THEN 7 WHEN 82 THEN 8
+    WHEN 81 THEN 9 WHEN 104 THEN 10 WHEN 255 THEN 11 WHEN 110 THEN 12
+    WHEN 2 THEN 13 WHEN 474 THEN 14 WHEN 649 THEN 15 WHEN 800 THEN 16
+    WHEN 482 THEN 17 WHEN 386 THEN 18 WHEN 826 THEN 19 WHEN 16 THEN 20
+    WHEN 1129 THEN 21 ELSE 99
+  END,
+  d.source_index, d.ts_iso, d.home, d.draw, d.away,
+  d.kelly_home, d.kelly_draw, d.kelly_away, d.endpoint_key
+FROM eu_detail_history d
+ORDER BY 4, 6 ASC, 5 DESC;
 
-CREATE OR REPLACE TABLE "大小球" AS
+INSERT INTO DB."亚盘" (
+  "比赛ID", "机构编号", "机构", "机构顺序", "盘口序号", "源序号",
+  "初盘主水", "初盘盘口", "初盘客水", "最新主水", "最新盘口", "最新客水", "更新时间"
+)
 SELECT
-  o.match_id AS "比赛ID",
-  o.company_id AS "机构编号",
-  o.bookmaker AS "机构",
-  o.first_over AS "初盘大球",
-  o.first_line AS "初盘盘口",
-  o.first_under AS "初盘小球",
-  o."over" AS "最新大球",
-  o.line AS "最新盘口",
-  o."under" AS "最新小球",
-  o.modify_iso AS "更新时间"
-FROM over_under o
-ORDER BY o.company_id, o.odds_id;
+  a.match_id, a.company_id, a.bookmaker,
+  CASE a.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
+  a.odds_id, a.odds_id,
+  a.first_home, a.first_line, a.first_away, a.home, a.line, a.away, a.modify_iso
+FROM asian_odds a;
+
+INSERT INTO DB."亚盘变盘" (
+  "比赛ID", "机构编号", "机构", "机构顺序", "源序号", "状态", "变盘时间", "主水", "盘口", "客水"
+)
+SELECT
+  h.match_id, h.company_id,
+  CASE h.company_id WHEN 1 THEN '澳彩' WHEN 3 THEN '皇冠' WHEN 8 THEN 'Bet365' WHEN 12 THEN '易胜博' WHEN 42 THEN '188Bet' WHEN 47 THEN '平博' WHEN 48 THEN '香港马会' ELSE CAST(h.company_id AS VARCHAR) END,
+  CASE h.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
+  h.source_index, h.status, h.ts_iso, h.home, h.line_text, h.away
+FROM ah_history h
+ORDER BY 4, 7 ASC, 5 DESC;
+
+INSERT INTO DB."大小球" (
+  "比赛ID", "机构编号", "机构", "机构顺序", "盘口序号", "源序号",
+  "初盘大球", "初盘盘口", "初盘小球", "最新大球", "最新盘口", "最新小球", "更新时间"
+)
+SELECT
+  o.match_id, o.company_id, o.bookmaker,
+  CASE o.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
+  o.odds_id, o.odds_id,
+  o.first_over, o.first_line, o.first_under, o."over", o.line, o."under", o.modify_iso
+FROM over_under o;
+
+INSERT INTO DB."大小球变盘" (
+  "比赛ID", "机构编号", "机构", "机构顺序", "源序号", "状态", "变盘时间", "大球", "盘口", "小球"
+)
+SELECT
+  h.match_id, h.company_id,
+  CASE h.company_id WHEN 1 THEN '澳彩' WHEN 3 THEN '皇冠' WHEN 8 THEN 'Bet365' WHEN 12 THEN '易胜博' WHEN 42 THEN '188Bet' WHEN 47 THEN '平博' WHEN 48 THEN '香港马会' ELSE CAST(h.company_id AS VARCHAR) END,
+  CASE h.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
+  h.source_index, h.status, h.ts_iso, h."over", h.line_text, h."under"
+FROM ou_history h
+ORDER BY 4, 7 ASC, 5 DESC;
+
 ```
 
 ## VIEWS
@@ -1626,14 +1594,7 @@ WITH checks(gate, observed, expected) AS (
     CASE
       WHEN (SELECT COUNT(*) FROM main.sqlite_master
              WHERE type = 'table'
-               AND name IN ('球队基本情况', '欧指', '欧指变盘', '亚盘', '大小球')) = 5
-      THEN 1 ELSE 0
-    END,
-    1
-  UNION ALL SELECT 'euro_detail_rows',
-    CASE
-      WHEN (SELECT COUNT(*) FROM DB."欧指变盘") =
-           (SELECT COUNT(*) FROM DB.euro_history)
+               AND name IN ('球队基本情况', '欧指', '欧指变盘', '亚盘', '亚盘变盘', '大小球', '大小球变盘')) = 7
       THEN 1 ELSE 0
     END,
     1
@@ -1703,6 +1664,104 @@ WITH checks(gate, observed, expected) AS (
     END,
     1
   UNION ALL SELECT 'presence_rows', (SELECT COUNT(*) FROM DB.team_stats WHERE metric = 'presence'), 0
+)
+SELECT COALESCE(SUM(CASE WHEN observed = expected THEN 0 ELSE 1 END), 0) AS violations FROM checks;
+```
+
+## GATE_FINAL
+
+```yaml
+name: GATE_FINAL
+description: "Gate the seven final tables in the single working database before cleanup."
+connection: "duckdb:"
+before_sql:
+  - INSTALL sqlite
+  - "ATTACH 'data/.staging/build.db' AS DB (TYPE SQLITE)"
+query: gate_final
+column: violations
+after_sql:
+  - USE memory
+  - DETACH DB
+active: true
+```
+
+```sql
+-- gate_final
+-- Final DB has exactly seven tables, no views, and all source facts.
+WITH checks(gate, observed, expected) AS (
+  SELECT 'final_table_count',
+    (SELECT COUNT(*) FROM duckdb_tables()
+      WHERE database_name = 'DB'
+        AND table_name IN ('球队基本情况', '欧指', '欧指变盘', '亚盘', '亚盘变盘', '大小球', '大小球变盘')), 7
+  UNION ALL SELECT 'final_identity_match',
+    CASE
+      WHEN (SELECT COUNT(DISTINCT "比赛ID") FROM DB."球队基本情况") = 1
+       AND (SELECT COUNT(DISTINCT "比赛ID") FROM DB."欧指") = 1
+       AND (SELECT COUNT(DISTINCT "比赛ID") FROM DB."欧指变盘") = 1
+       AND (SELECT COUNT(DISTINCT "比赛ID") FROM DB."亚盘") = 1
+       AND (SELECT COUNT(DISTINCT "比赛ID") FROM DB."亚盘变盘") = 1
+       AND (SELECT COUNT(DISTINCT "比赛ID") FROM DB."大小球") = 1
+       AND (SELECT COUNT(DISTINCT "比赛ID") FROM DB."大小球变盘") = 1
+      THEN 1 ELSE 0
+    END, 1
+  UNION ALL SELECT 'euro_rows', (SELECT COUNT(*) FROM DB."欧指"), 21
+  UNION ALL SELECT 'euro_history_rows',
+    CASE WHEN (SELECT COUNT(*) FROM DB."欧指变盘") > 0 THEN 1 ELSE 0 END, 1
+  UNION ALL SELECT 'euro_history_sources',
+    (SELECT COUNT(DISTINCT "来源端点") FROM DB."欧指变盘"), 7
+  UNION ALL SELECT 'euro_detail_rows',
+    CASE
+      WHEN (SELECT COUNT(*) FROM DB."欧指变盘") =
+           (SELECT COUNT(*) FROM DB.euro_history)
+         + (SELECT COUNT(*) FROM DB.eu_detail_history)
+      THEN 1 ELSE 0
+    END, 1
+  UNION ALL SELECT 'ah_detail_rows',
+    CASE
+      WHEN (SELECT COUNT(*) FROM DB."亚盘变盘") =
+           (SELECT COUNT(*) FROM DB.ah_history)
+      THEN 1 ELSE 0
+    END, 1
+  UNION ALL SELECT 'ou_detail_rows',
+    CASE
+      WHEN (SELECT COUNT(*) FROM DB."大小球变盘") =
+           (SELECT COUNT(*) FROM DB.ou_history)
+      THEN 1 ELSE 0
+    END, 1
+  UNION ALL SELECT 'asian_rows',
+    CASE WHEN (SELECT COUNT(*) FROM DB."亚盘") > 0 THEN 1 ELSE 0 END, 1
+  UNION ALL SELECT 'asian_history_rows',
+    CASE WHEN (SELECT COUNT(*) FROM DB."亚盘变盘") > 0 THEN 1 ELSE 0 END, 1
+  UNION ALL SELECT 'ou_rows',
+    CASE WHEN (SELECT COUNT(*) FROM DB."大小球") > 0 THEN 1 ELSE 0 END, 1
+  UNION ALL SELECT 'ou_history_rows',
+    CASE WHEN (SELECT COUNT(*) FROM DB."大小球变盘") > 0 THEN 1 ELSE 0 END, 1
+  UNION ALL SELECT 'team_info_rows',
+    CASE
+      WHEN (SELECT COUNT(*) FROM DB."球队基本情况") =
+           1
+           + (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '阵容')
+           + (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '伤停')
+           + (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '技术统计')
+           + 27 + 22
+      THEN 1 ELSE 0
+    END, 1
+  UNION ALL SELECT 'team_info_types',
+    CASE
+      WHEN (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '比赛信息') = 1
+       AND (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '阵容') > 0
+       AND (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '伤停') > 0
+       AND (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '技术统计') > 0
+      THEN 1 ELSE 0
+    END, 1
+  UNION ALL SELECT 'data_status_rows',
+    (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '数据状态'), 27
+  UNION ALL SELECT 'data_status_endpoints',
+    (SELECT COUNT(DISTINCT "来源端点") FROM DB."球队基本情况" WHERE "数据类型" = '数据状态'), 27
+  UNION ALL SELECT 'bookmaker_status_rows',
+    (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '机构状态'), 22
+  UNION ALL SELECT 'bookmaker_status_slots',
+    (SELECT COUNT(DISTINCT "机构") FROM DB."球队基本情况" WHERE "数据类型" = '机构状态'), 22
 )
 SELECT COALESCE(SUM(CASE WHEN observed = expected THEN 0 ELSE 1 END), 0) AS violations FROM checks;
 ```

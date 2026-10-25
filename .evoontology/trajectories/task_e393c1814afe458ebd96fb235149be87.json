@@ -1,0 +1,205 @@
+{
+  "task_id": "task_e393c1814afe458ebd96fb235149be87",
+  "question_id": "q_3003920_v5_live_read_path",
+  "question": "对 v6 活跃本体执行 3018847 七表只读验收：平博 机构编号 177、皇冠 545、Bet365 281、澳彩 80、香港马会 432 的最新主胜是否可从 欧指 读取，并核对 27 个数据状态与 22 个数据库机构状态。",
+  "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-24/3018847.db",
+  "origin": "user",
+  "topics": [
+    "sqlite",
+    "v5",
+    "live-read"
+  ],
+  "ontology_version": "ontology_v6",
+  "batch_id": "",
+  "split": "construction",
+  "task_status": "completed",
+  "started_at": "2026-10-25T04:51:14.345966+00:00",
+  "events": [
+    {
+      "event_id": "evt_verify_3018847_1",
+      "tool": "sqlite_query",
+      "input": {
+        "query": "SELECT \"机构编号\", \"机构\", \"最新主胜\", \"最新平局\", \"最新客胜\" FROM \"欧指\" WHERE \"机构编号\" IN (177,545,281,80,432) ORDER BY \"机构顺序\";"
+      },
+      "result": {
+        "columns": [
+          "机构编号",
+          "机构",
+          "最新主胜",
+          "最新平局",
+          "最新客胜"
+        ],
+        "rows": [
+          [
+            80,
+            "澳彩",
+            1.35,
+            5.35,
+            5.4
+          ],
+          [
+            545,
+            "皇冠",
+            1.52,
+            5.1,
+            5.3
+          ],
+          [
+            281,
+            "Bet365",
+            1.42,
+            5.5,
+            6.0
+          ],
+          [
+            177,
+            "平博",
+            1.53,
+            5.01,
+            5.52
+          ],
+          [
+            432,
+            "香港马会",
+            1.38,
+            4.85,
+            4.95
+          ]
+        ],
+        "truncated": false
+      },
+      "result_truncated": false,
+      "result_summary": "{'columns': ['机构编号', '机构', '最新主胜', '最新平局', '最新客胜'], 'rows': [[80, '澳彩', 1.35, 5.35, 5.4], [545, '皇冠', 1.52, 5.1, 5.3], [281, 'Bet365', 1.42, 5.5, 6.0], [177, '平博', 1.53, 5.01, 5.52], [432, '香港马会', 1.38, 4.85, 4.95]], 'truncated': False}",
+      "error": false
+    },
+    {
+      "event_id": "evt_verify_3018847_2",
+      "tool": "sqlite_query",
+      "input": {
+        "query": "SELECT \"数据类型\", COUNT(*) AS n, COUNT(DISTINCT \"来源端点\") AS endpoints, COUNT(DISTINCT \"机构\") AS bookmakers FROM \"球队基本情况\" WHERE \"数据类型\" IN ('数据状态','机构状态') GROUP BY \"数据类型\" ORDER BY \"数据类型\";"
+      },
+      "result": {
+        "columns": [
+          "数据类型",
+          "n",
+          "endpoints",
+          "bookmakers"
+        ],
+        "rows": [
+          [
+            "数据状态",
+            27,
+            27,
+            0
+          ],
+          [
+            "机构状态",
+            22,
+            1,
+            22
+          ]
+        ],
+        "truncated": false
+      },
+      "result_truncated": false,
+      "result_summary": "{'columns': ['数据类型', 'n', 'endpoints', 'bookmakers'], 'rows': [['数据状态', 27, 27, 0], ['机构状态', 22, 1, 22]], 'truncated': False}",
+      "error": false
+    }
+  ],
+  "semantic_calls": [],
+  "native_tool_calls": [
+    {
+      "event_id": "evt_verify_3018847_1",
+      "tool": "sqlite_query",
+      "input": {
+        "query": "SELECT \"机构编号\", \"机构\", \"最新主胜\", \"最新平局\", \"最新客胜\" FROM \"欧指\" WHERE \"机构编号\" IN (177,545,281,80,432) ORDER BY \"机构顺序\";"
+      },
+      "result": {
+        "columns": [
+          "机构编号",
+          "机构",
+          "最新主胜",
+          "最新平局",
+          "最新客胜"
+        ],
+        "rows": [
+          [
+            80,
+            "澳彩",
+            1.35,
+            5.35,
+            5.4
+          ],
+          [
+            545,
+            "皇冠",
+            1.52,
+            5.1,
+            5.3
+          ],
+          [
+            281,
+            "Bet365",
+            1.42,
+            5.5,
+            6.0
+          ],
+          [
+            177,
+            "平博",
+            1.53,
+            5.01,
+            5.52
+          ],
+          [
+            432,
+            "香港马会",
+            1.38,
+            4.85,
+            4.95
+          ]
+        ],
+        "truncated": false
+      },
+      "result_truncated": false,
+      "result_summary": "{'columns': ['机构编号', '机构', '最新主胜', '最新平局', '最新客胜'], 'rows': [[80, '澳彩', 1.35, 5.35, 5.4], [545, '皇冠', 1.52, 5.1, 5.3], [281, 'Bet365', 1.42, 5.5, 6.0], [177, '平博', 1.53, 5.01, 5.52], [432, '香港马会', 1.38, 4.85, 4.95]], 'truncated': False}",
+      "error": false
+    },
+    {
+      "event_id": "evt_verify_3018847_2",
+      "tool": "sqlite_query",
+      "input": {
+        "query": "SELECT \"数据类型\", COUNT(*) AS n, COUNT(DISTINCT \"来源端点\") AS endpoints, COUNT(DISTINCT \"机构\") AS bookmakers FROM \"球队基本情况\" WHERE \"数据类型\" IN ('数据状态','机构状态') GROUP BY \"数据类型\" ORDER BY \"数据类型\";"
+      },
+      "result": {
+        "columns": [
+          "数据类型",
+          "n",
+          "endpoints",
+          "bookmakers"
+        ],
+        "rows": [
+          [
+            "数据状态",
+            27,
+            27,
+            0
+          ],
+          [
+            "机构状态",
+            22,
+            1,
+            22
+          ]
+        ],
+        "truncated": false
+      },
+      "result_truncated": false,
+      "result_summary": "{'columns': ['数据类型', 'n', 'endpoints', 'bookmakers'], 'rows': [['数据状态', 27, 27, 0], ['机构状态', 22, 1, 22]], 'truncated': False}",
+      "error": false
+    }
+  ],
+  "errors": [],
+  "final_answer": "v6 active path reads the seven-table 3018847.db: 欧指 returns 5 tested bookmakers (80/545/281/177/432); 球队基本情况 has 27 数据状态 rows across 27 distinct endpoints and 22 机构状态 rows across 22 bookmakers. No staging/raw tables are used.",
+  "recorded_at": "2026-10-25T04:51:17.928053+00:00"
+}

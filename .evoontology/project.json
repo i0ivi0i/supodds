@@ -4,7 +4,7 @@
     "min_new_trajectories": 30,
     "strategy": "rolling_trajectory"
   },
-  "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-24/3003920.db",
+  "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-24/3018847.db",
   "description": "Football match odds deduction perception layer (eyes & camera) workspace.",
   "evaluation": {
     "type": "llm_judge",

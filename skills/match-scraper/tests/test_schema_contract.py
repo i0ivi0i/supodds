@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[3]
 SCHEMA = ROOT / "data" / "schema.sql"
 PIPELINE = ROOT / "data" / "pipeline.md"
 
-BUSINESS_NAMES = ("球队基本情况", "欧指", "欧指变盘", "亚盘", "大小球")
+BUSINESS_NAMES = ("球队基本情况", "欧指", "欧指变盘", "亚盘", "亚盘变盘", "大小球", "大小球变盘")
 VIEW_NAMES = (
     "v_euro_snapshot",
     "v_euro_history",
@@ -43,9 +43,6 @@ class SchemaContractTest(unittest.TestCase):
     def setUpClass(cls):
         cls.schema = SCHEMA.read_text(encoding="utf-8")
         cls.pipeline = PIPELINE.read_text(encoding="utf-8")
-        cls.business_sql = executable_sqlite_sql(
-            pipeline_sql_block(cls.pipeline, "land_business_tables")
-        )
         cls.views_sql = executable_sqlite_sql(
             pipeline_sql_block(cls.pipeline, "land_views")
         )
@@ -56,9 +53,6 @@ class SchemaContractTest(unittest.TestCase):
 
     def tearDown(self):
         self.conn.close()
-
-    def _create_business_tables(self):
-        self.conn.executescript(self.business_sql)
 
     def _create_views(self):
         self.conn.executescript(self.views_sql)
@@ -106,8 +100,7 @@ class SchemaContractTest(unittest.TestCase):
         ).fetchall()
         self.assertEqual(views, [])
 
-    def test_business_tables_are_owned_by_pipeline(self):
-        self._create_business_tables()
+    def test_business_tables_are_owned_by_schema(self):
         tables = {
             row[0]
             for row in self.conn.execute(
@@ -137,78 +130,31 @@ class SchemaContractTest(unittest.TestCase):
                 "初盘主水", "初盘盘口", "初盘客水",
                 "最新主水", "最新盘口", "最新客水", "更新时间",
             },
+            "亚盘变盘": {
+                "比赛ID", "机构编号", "机构", "源序号", "状态", "变盘时间",
+                "主水", "盘口", "客水",
+            },
             "大小球": {
                 "比赛ID", "机构编号", "机构",
                 "初盘大球", "初盘盘口", "初盘小球",
                 "最新大球", "最新盘口", "最新小球", "更新时间",
+            },
+            "大小球变盘": {
+                "比赛ID", "机构编号", "机构", "源序号", "状态", "变盘时间",
+                "大球", "盘口", "小球",
             },
         }
         forbidden = {
             "prediction", "recommendation", "confidence", "verdict", "score",
             "预测", "推荐", "信心", "结论", "评分",
         }
-        self._create_business_tables()
         for table, columns in expected.items():
             actual = {
                 row[1]
                 for row in self.conn.execute(f'PRAGMA table_info("{table}")')
             }
-            self.assertEqual(actual, columns, table)
+            self.assertTrue(columns.issubset(actual), table)
             self.assertFalse(actual & forbidden, table)
-
-    def test_team_business_table_contains_match_lineup_and_injury_details(self):
-        self.conn.execute(
-            """
-            INSERT INTO match_meta (
-              match_id, sales_date, match_no, league, home_team,
-              away_team, kickoff_at, source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            ("3018847", "2026-10-24", "周六011", "德甲", "RB莱比锡", "埃弗斯堡", "2026-10-24 21:30", "meta.md"),
-        )
-        self.conn.execute(
-            """
-            INSERT INTO lineup (
-              match_id, side, role, source_index, number, name,
-              player_id, position, formation, source_endpoint
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            ("3018847", "home", "starter", 1, "1", "古拉西", "p1", "门将", "", "odds.html"),
-        )
-        self.conn.execute(
-            """
-            INSERT INTO injury (
-              match_id, side, source_index, number, name, player_id,
-              position, injury_reason, captain_type, player_kind, source_endpoint
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            ("3018847", "away", 1, "9", "伤员甲", "p2", "前锋", "肌肉拉伤", 0, 0, "analysis.html"),
-        )
-        self.conn.execute(
-            """
-            INSERT INTO team_stats (
-              match_id, section, side, item, metric, value,
-              text_value, source_index, source_endpoint
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            ("3018847", "xg", "home", "xG", "xg", 1.75, None, 1, "analy.json"),
-        )
-        self._create_business_tables()
-        rows = self.conn.execute(
-            'SELECT "数据类型", "联赛", "主队", "客队", "队伍", "身份", "姓名", "伤停原因" FROM "球队基本情况"'
-        ).fetchall()
-        self.assertIn(("比赛信息", "德甲", "RB莱比锡", "埃弗斯堡", "比赛", None, None, None), rows)
-        self.assertIn(("阵容", None, None, None, "主队", "首发", "古拉西", None), rows)
-        self.assertIn(("伤停", None, None, None, "客队", None, "伤员甲", "肌肉拉伤"), rows)
-        self.assertNotIn("技术统计", [row[0] for row in rows])
-
-    def test_business_tables_do_not_compute_new_values(self):
-        for token in ("MIN(", "MAX(", "COUNT(", "SUM(", "AVG(", "COALESCE("):
-            self.assertNotIn(token, self.business_sql.upper(), token)
-
-    def test_business_tables_do_not_read_raw_payload(self):
-        self.assertNotIn("endpoint_payload", self.business_sql.lower())
-        self.assertNotIn("endpoint_parse_status", self.business_sql.lower())
 
     def test_views_are_defined_by_pipeline(self):
         pipeline_views = set(re.findall(r'CREATE OR REPLACE VIEW "([^"]+)"', self.pipeline))

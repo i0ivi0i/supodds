@@ -11,7 +11,7 @@ class PipelineContractTest(unittest.TestCase):
     def setUpClass(cls):
         cls.text = PIPELINE.read_text(encoding="utf-8")
 
-    def test_all_attach_targets_use_fixed_staging(self):
+    def test_all_attach_targets_use_single_working_database(self):
         targets = re.findall(r"ATTACH '([^']+)' AS DB", self.text)
         self.assertTrue(targets)
         self.assertEqual(set(targets), {"data/.staging/build.db"})
@@ -57,10 +57,11 @@ class PipelineContractTest(unittest.TestCase):
         self.assertNotIn("DELETE FROM DB.endpoint_payload", endpoint_payload)
 
     def test_business_tables_and_views_are_pipeline_owned(self):
-        self.assertIn("name: BUSINESS_TABLES", self.text)
+        self.assertIn("name: PUBLISH_FINAL", self.text)
         self.assertIn("name: VIEWS", self.text)
         for name in (
-            "球队基本情况", "欧指", "欧指变盘", "亚盘", "大小球",
+            "球队基本情况", "欧指", "欧指变盘", "亚盘", "亚盘变盘",
+            "大小球", "大小球变盘",
             "v_euro_snapshot", "v_euro_history", "v_asian_odds",
             "v_over_under", "v_ah_history", "v_ou_history",
             "v_eu_detail_history", "v_injury", "v_lineup",
@@ -68,7 +69,7 @@ class PipelineContractTest(unittest.TestCase):
             "v_analysis_status",
         ):
             self.assertIn(name, self.text)
-        self.assertIn("CREATE OR REPLACE TABLE", self.text)
+        self.assertNotIn("name: BUSINESS_TABLES", self.text)
         self.assertIn("CREATE OR REPLACE VIEW", self.text)
 
     def test_history_views_are_chronological_and_keep_latest_tie_last(self):
@@ -82,12 +83,19 @@ class PipelineContractTest(unittest.TestCase):
             self.assertIn("ORDER BY ts_iso ASC, source_index DESC", block, view)
 
     def test_euro_detail_has_clear_odds_columns_and_chronological_order(self):
-        block = self.text.split('CREATE OR REPLACE TABLE "欧指变盘"', 1)[1].split(";", 1)[0]
+        block = self.text.split('INSERT INTO DB."欧指变盘"', 1)[1].split(";", 1)[0]
         for column in ("主胜赔率", "平局赔率", "客胜赔率"):
             self.assertIn(column, block)
         self.assertIn("WHEN 80 THEN 1", block)
         self.assertIn("WHEN 1129 THEN 21", block)
-        self.assertIn("END, h.ts_iso ASC, h.source_index DESC", block)
+        self.assertIn("ORDER BY 4, 6 ASC, 5 DESC", block)
+
+    def test_handicap_and_over_under_detail_use_fixed_institution_order(self):
+        for table in ("亚盘变盘", "大小球变盘"):
+            block = self.text.split(f'INSERT INTO DB."{table}"', 1)[1].split(";", 1)[0]
+            self.assertIn("WHEN 1 THEN 1", block, table)
+            self.assertIn("WHEN 48 THEN 7", block, table)
+            self.assertIn("ORDER BY 4, 7 ASC, 5 DESC", block, table)
 
     def test_gate_checks_match_meta_identity(self):
         gate = self.text.split("name: GATE_LIVE", 1)[1]
@@ -116,6 +124,26 @@ class PipelineContractTest(unittest.TestCase):
         self.assertIn("manifest_payload_binding", gate)
         self.assertIn("main.sqlite_master", gate)
         self.assertNotIn("DB.v_bookmaker_slots", gate)
+
+
+    def test_publish_final_writes_only_seven_final_tables_in_one_db(self):
+        publish = self.text.split("name: PUBLISH_FINAL", 1)[1].split("name: VIEWS", 1)[0]
+        self.assertEqual(publish.count('INSERT INTO DB."'), 7)
+        self.assertIn("ATTACH 'data/.staging/build.db' AS DB", publish)
+        self.assertNotIn("ATTACH 'data/.staging/final.db' AS FINAL", publish)
+        self.assertNotIn("CREATE OR REPLACE", publish)
+
+    def test_gate_final_checks_seven_tables(self):
+        gate = self.text.split("name: GATE_FINAL", 1)[1]
+        self.assertIn("final_table_count", gate)
+        self.assertIn("data_status_rows", gate)
+        self.assertIn("bookmaker_status_rows", gate)
+        self.assertIn("euro_detail_rows", gate)
+        self.assertIn("ah_detail_rows", gate)
+        self.assertIn("ou_detail_rows", gate)
+        self.assertIn('DB."欧指变盘"', gate)
+        self.assertIn('DB."亚盘变盘"', gate)
+        self.assertIn('DB."大小球变盘"', gate)
 
 
 if __name__ == "__main__":

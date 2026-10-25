@@ -18,7 +18,7 @@ metadata:
 
 # 赛程与推演源数据采集（match-scraper）· 马斯克超级工厂工位 1
 
-> **【当前数据路径（2026-10-24 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db`。本工位用 Scrapling 官方 Spider 抓取并导出仓库外临时 JSONL，再由 ETLX 官方 `-file` 载入 `endpoint_payload`，其余 ETLX 步骤只读数据库；raw JSON 已退出 active 路径。`{matchId}.md` 仅为可选人类看板。
+> **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用 Scrapling 官方 Spider 抓取并导出仓库外临时 JSONL，再由 ETLX 官方 `-file` 载入 `data/.staging/build.db` 的 staging `endpoint_payload`；`PUBLISH_FINAL` 把七表写回同一个工作库，清理 staging 后只剩七表。raw JSON 已退出 active 路径。`{matchId}.md` 仅为可选人类看板。
 
 ---
 
@@ -544,9 +544,9 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
   - **GB18030 二进制保真解码**：球探网二级变盘流水页面（`changeDetail/*.aspx`）必须基于原始 bytes 显式以 `gb18030` 解码，严禁外部默认 UTF-8 强解导致队名与盘口汉字乱码；
   - **拦截质询盾与残缺流**：严禁将 403/503 或 Cloudflare 挑战盾页面当作正常数据接收，遇反爬盾自动升阶 `stealthy_fetch(solve_cloudflare=true)`；`1x2d.js` 必须包含法定 21 家欧指 cid 原始行并能完整反序列化，杜绝因网络中断截断只收到残缺报文！
 - **二不：绝不写入假数据（Anti-Fake-Data Guardrail）**：
-  - **存证 100% 物理真实（SQLite SSOT Invariant）**：`data/{销售日}/{matchId}.db` 的 27 个分析端点 `endpoint_payload` 必须 100% 是网络真实活水响应经官方 JSONL 载入，严禁任何 Agent 手工编造、硬编码 mock 数据或篡改报文；
+  - **存证 100% 物理真实（SQLite SSOT Invariant）**：`data/{销售日}/{matchId}.db` 的最终七表必须 100% 由 staging 的真实 27 个分析端点经 `PUBLISH_FINAL` 投影；staging `endpoint_payload` 必须来自官方 JSONL 的网络真实活水响应，严禁任何 Agent 手工编造、硬编码 mock 数据或篡改报文；
   - **未开盘严禁脑补（Zero Hallucinated Odds）**：凡机构未开盘（如香港马会次级联赛未开亚盘、体彩深盘未开单关）或 Polymarket 未开设当场预测合约，**必须且只能**如实标注 `[官方未开盘]`！绝对严禁在后台或前端硬编码伪造赔率（如伪造“60.5¢”挂单、伪造 Crown 波胆或伪造伤停）。宁可报缺报阻，绝不造假脑补！
-  - **真实哈希反作弊（SQLite Anti-Tampering）**：`endpoint_payload.chars` 必须与 `content` 字符长度 1:1 相等，`sha256(content)` 必须等于存储的 `sha256`，`raw_sha256` 必须等于 JSONL 原始字节哈希；虚报立即熔断报警。
+  - **真实哈希反作弊（SQLite Anti-Tampering）**：staging `endpoint_payload.chars` 必须与 `content` 字符长度 1:1 相等，`sha256(content)` 必须等于存储的 `sha256`，`raw_sha256` 必须等于 JSONL 原始字节哈希；最终 `球队基本情况` 的 27 条 `数据状态` 必须把对应 `数据指纹` 与 `采集时间` 原样带入，虚报立即熔断报警。
 - **三不：数据绝不能放错（Anti-Misplacement & Strict Mapping Guardrail）**：
   - **做市商 ID 字典级刚性锁死**：以 21 家欧指 cid 与 7 家亚盘/大小球 cid 两套字典构建 Hash Map 进行常数级精确提取，`parts[0]` 为机构 ID (`cid`)，**绝对严禁错用 `parts[1]`**！绝不把平博的数据填到皇冠，绝不把澳彩的水位错放进马会；188Bet 只有亚盘 cid=42，欧指无 cid，42=18Bet 严禁冒充；
   - **盘口赔率三要素槽位强断言**：
@@ -568,7 +568,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
   - **23 项布尔存在性核销**：组装简报时必须逐家执行布尔核对清单（Boolean Checklist），除体彩深盘不开单固、次级联赛香港马会未开亚盘外，所有法定做市商缺失立即判定为采集遗漏并物理阻断，缺失项必须显式标记「官方未开盘」，严禁静默漏报！
 - **护栏三：In-Flight Selector Pushdown & 28 个采集端点 Schema 防伪（27 分析 + 1 交付）**：
   - **选择器底层下推（`css_selector`）**：抓取 HTML 页面时强制传递精确选择器：21 张变盘流水表用 `css_selector="#odds2 table"`；亚盘/大小球全景总表用 `css_selector="#table_odds"`；分析页用完整 HTML（可选 `#porlet_*`）；波胆用 `#analy_sbAllOdds`；禁止再用已失效的 `#team_lineup`。
-  - **28 个采集端点 → 27 个分析端点 Schema 强断言**：底层 SQLite `endpoint_payload` 必须包含 27 个分析端点键（`1x2d.js`, `analysis.html`, `odds.html`, `analy.json`, `asian_odds.html`, `over_under.html`, 7家机构21张流水HTML）；`polymarket.json` 不入分析库。任何通过填充乱码、空白字符串或伪造文本虚标体积的行为，均会导致 JSON Schema 解析破裂与装配阶段直接抛出错误，从物理根源杜绝 AI 作弊填充！
+  - **28 个采集端点 → 最终七表 Schema 强断言**：staging `endpoint_payload` 必须包含 27 个分析端点键（`1x2d.js`, `analysis.html`, `odds.html`, `analy.json`, `asian_odds.html`, `over_under.html`, 7家机构21张流水HTML）；`polymarket.json` 不入分析库；`PUBLISH_FINAL` 后清理 staging，最终库只能有 7 张表，`球队基本情况` 必须生成 27 条数据状态 + 22 条机构状态。任何通过填充乱码、空白字符串或伪造文本虚标体积的行为，均会导致 JSON Schema 解析破裂与装配阶段直接抛出错误，从物理根源杜绝 AI 作弊填充！
 - **护栏四：Dynamic DOM Escalation Guardrail（动态渲染升级护栏，防空壳抽稀）**：
   - **空骨架判定标准**：若 Level 1 请求提取到的数据表格行数（`<tr>` 数量）$< 2$ 且页面包含动态加载脚本，自动无缝升阶至 `mcp__scrapling__browser_fetch(network_idle=True)`，等待网络静默完成再抽取 DOM，彻底杜绝只抓 190 行残缺骨架！
 
@@ -621,7 +621,7 @@ Feed 以 `$` 分为前后两段：前段是联赛字典（`#` 分隔）；后段
 py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {YYYY-MM-DD} --home {主队} --away {客队} --output <仓库外临时.jsonl> [--force] [--polymarket-slug {slug}]
 ```
 
-它按 `config/endpoints.json` 发 28 个请求，逐端点分类过门禁，由 Scrapling 官方 `ItemList.to_jsonl()` 导出 27 行分析端点 JSONL（`polymarket.json` 仅为交付，不入分析库），**不再写 raw JSON**。同一输出文件 10 分钟内、且缓存是同一场比赛的完整 27 行时自动跳过（cooldown，输出 `ok:false` + `cached:true`）；主人明确说“重新分析”时才加 `--force`。随后用 SQLite Python 引导建空 staging 库，再由 ETLX 官方两段式载入：
+它按 `config/endpoints.json` 发 28 个请求，逐端点分类过门禁，由 Scrapling 官方 `ItemList.to_jsonl()` 导出 27 行分析端点 JSONL（`polymarket.json` 仅为交付，不入分析库），**不再写 raw JSON**。同一输出文件 10 分钟内、且缓存是同一场比赛的完整 27 行时自动跳过（cooldown，输出 `ok:false` + `cached:true`）；主人明确说“重新分析”时才加 `--force`。随后用 SQLite Python 引导建**一个**工作库，再由 ETLX 官方写入七表并清理 staging：
 
 ```bash
 mkdir -p data/.staging
@@ -632,15 +632,40 @@ ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd6
 "$ETLX" -config data/pipeline.md -date {销售日} -skip ENDPOINT_PAYLOAD
 ```
 
-`data/schema.sql` 只建 STRICT、主键、非空、`CHECK` 物理表，不再包含任何视图。`data/pipeline.md` 的全部 `ATTACH` 固定指向 `data/.staging/build.db`，换场不改 SQL；每次构建前必须重建空库。`MATCH_META` 只读 `data/{销售日}/meta.md`，把队名、联赛、竞彩编号、开球时间写入 `match_meta`；它不增加网络端点，也不改变 27 个分析端点的数量。第二阶段执行 `BUSINESS_TABLES` 生成四个中文入口表和 `欧指变盘` 明细，再由 `VIEWS` 生成 13 个只读 `v_*` 视图；人、机器和 AI 先看 `球队基本情况`、`欧指`、`亚盘`、`大小球`，欧指逐笔时序看 `欧指变盘`，其他逐笔流水再下钻 `v_*_history`，不直接读原始 payload。业务表只做原值直搬，禁止在表内做 MIN/MAX/COUNT/SUM/AVG、概率换算、缺失值填充或跨行聚合；统计和推演由 AI 读取原值后现场完成。若对旧库原地迁移，必须先 `DROP VIEW IF EXISTS` 四个中文业务视图，再执行 `BUSINESS_TABLES`；全新空库不需要。门禁 `violations=0` 且外部只读复核通过后，才可把 staging 改名为最终 `data/{销售日}/{matchId}.db`：
+`data/schema.sql` 同时建 staging 物理表与最终七表，全部 STRICT、0 视图；**没有 `schema_final.sql`，也没有第二个 final 库**。`data/pipeline.md` 的 `ATTACH` 固定指向 `data/.staging/build.db`；`MATCH_META` 只读 `data/{销售日}/meta.md`；`PUBLISH_FINAL` 把七表写回同一个工作库；`GATE_LIVE` 与 `GATE_FINAL` 均通过后，用下面这条**一次性清理命令**删除 staging 视图与 staging 表，只留七张业务表：
 
 ```bash
-# 保留上一份最终库，门禁通过后才替换
-if [ -f "data/{销售日}/{matchId}.db" ]; then mv "data/{销售日}/{matchId}.db" "data/{销售日}/{matchId}.db.previous"; fi
-mv data/.staging/build.db "data/{销售日}/{matchId}.db"
+py -3.13 - <<'PY'
+import sqlite3
+p = 'data/.staging/build.db'
+c = sqlite3.connect(p)
+for v in ('v_euro_snapshot','v_euro_history','v_asian_odds','v_over_under',
+          'v_ah_history','v_ou_history','v_eu_detail_history','v_injury',
+          'v_lineup','v_team_stats','v_bookmaker_slots','v_payload_coverage',
+          'v_analysis_status'):
+    c.execute(f'DROP VIEW IF EXISTS "{v}"')
+for t in ('endpoint_payload','euro_snapshot','euro_history','asian_odds',
+          'over_under','ah_history','ou_history','eu_detail_history',
+          'bookmaker_slots','injury','lineup','team_stats',
+          'endpoint_parse_status','build_manifest','match_meta'):
+    c.execute(f'DROP TABLE IF EXISTS "{t}"')
+c.commit()
+c.execute('VACUUM')
+print(c.execute("SELECT type, COUNT(*) FROM sqlite_master WHERE type IN ('table','view') GROUP BY type").fetchall())
+print(c.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall())
+c.close()
+PY
+# GATE_FINAL 已在 ETLX 阶段通过；清理只删除 staging，不改七表数据。
 ```
 
-外部只读复核至少检查：`sqlite_master` 中四个入口表和 `欧指变盘` 存在、13 个 `v_*` 视图存在、四张入口表与 `欧指变盘` 行数等于源表推导值、`v_bookmaker_slots=23`、`PRAGMA integrity_check=ok`、`PRAGMA foreign_key_check` 为空。失败时保留 staging 供检查，不动旧最终库。**批量进货只走这条主路径。** JSONL 是仓库外临时交接物，成功后删除。ETLX 若打印 `Error loading .env file` 但 exit 0 且行数正确，属非致命噪声；以 SQLite 只读复核为准，不能只看 ETLX 退出码。
+清理后工作库只剩七张业务表、0 视图；直接晋升：
+
+```bash
+if [ -f "data/{销售日}/{matchId}.db" ]; then cp "data/{销售日}/{matchId}.db" "data/{销售日}/{matchId}.db.previous"; fi
+cp data/.staging/build.db "data/{销售日}/{matchId}.db"
+```
+
+外部只读复核至少检查：`sqlite_master` 中只有七张业务表且 0 视图；`球队基本情况` 行数 = 1 + lineup + injury + team_stats + 27 + 22；`欧指`=21；`欧指变盘`=euro_history+eu_detail_history；`亚盘`/`大小球` 非空；两张流水表等于源表；`PRAGMA integrity_check=ok`。失败时保留工作库供检查，不动旧最终库。**批量进货只走这条主路径。** JSONL 是仓库外临时交接物，成功后删除。ETLX 若打印 `Error loading .env file` 但 exit 0 且行数正确，属非致命噪声；以 SQLite 只读复核为准，不能只看 ETLX 退出码。
 
 **降级/诊断（单端点或工具不可用时）**：以下 MCP 三部曲只作单请求诊断与降级，不得用来冒充 28 端点原子装配。
 
@@ -707,14 +732,14 @@ mv data/.staging/build.db "data/{销售日}/{matchId}.db"
 
 ## 第六工段：Poka-Yoke 双重物理质检门禁与标准零件托盘 1 交付
 
-### 6.1 双重物理质检门禁（SQLite 存证 27 行满配 vs 人类简报黄金装配）
+### 6.1 双重物理质检门禁（最终七表满配 vs 人类简报黄金装配）
 
-1. **SQLite 存证满配门禁（`data/{销售日}/{matchId}.db`）**：
-   - `endpoint_payload` 行数必须为 **27 个分析端点**、distinct `endpoint_key` 必须为 27；`polymarket.json` 必须 0 行；绝对严禁遗漏 21 张变盘流水表以及亚盘/大小球全景总表；
-   - `endpoint_payload` 必须包含全量 27 个分析端点键，且各键 `content` 必须为有效字符串（可被 DOM/JSON 正常解析，绝非垃圾填充）；
-   - `1x2d.js` 行必须包含法定 21 家欧指 cid 记录且能完整反序列化，确保欧指无截断；188Bet 与 Polymarket 走各自槽位；
-   - `asian_odds.html` 与 `over_under.html` 行必须包含各主流机构初盘与即盘原始报文；
-   - `endpoint_payload.chars` 必须与 `content` 真实字符数 1:1 精确匹配，`sha256(content)` 必须等于 `sha256`；虚报立即熔断报警。
+1. **最终七表存证满配门禁（`data/{销售日}/{matchId}.db`）**：
+   - `sqlite_master` 必须只有 7 张业务表、0 视图；不得有 `endpoint_payload`、源表或 `v_*`；
+   - `球队基本情况` 必须是 1 + staging `lineup` + `injury` + `team_stats` + 27 + 22；其中 `数据状态` 27 行且 distinct `来源端点` 27，`机构状态` 22 行且 distinct `机构` 22；
+   - `欧指` 21 行；`欧指变盘` 必须等于 staging `euro_history` + `eu_detail_history`，且 `来源端点` 数与 staging 的实际 `eu_*` distinct 端点 + 1 一致；
+   - `亚盘`/`大小球` 非空；`亚盘变盘`/`大小球变盘` 分别等于 staging `ah_history`/`ou_history`；
+   - staging 的 `endpoint_payload` 仍必须为 27 个分析端点、distinct key 27，`polymarket.json` 0 行；`chars = length(content)`，`sha256(content) = sha256`；最终 `数据状态` 的 `数据指纹`/`采集时间` 必须与 staging 对得上。
 2. **人类可视化简报黄金装配门禁（可选看板 `data/{销售日}/{matchId}.md`；仅当生成时执行，不生成不影响 `.db` 与分析）**：
    - **严禁全页裸拼（Zero Full-Page Dump Invariant）**：绝对严禁将 `analysis.html` 全文或未加选择器的 HTML 页面直接调用 `markdown()` 倾倒入 `.md` 简报！`.md` 文件必须由六大标准组件自底向上纯净构建；
    - **六重品控防错门禁（Poka-Yoke Markdown Gates）**：
@@ -756,11 +781,11 @@ mv data/.staging/build.db "data/{销售日}/{matchId}.db"
    - 赛程总览索引：`data/{销售日}/meta.md`
    - 赛程记忆追加：`memory/{销售日}.md` 中的 `## 赛程抓取（HH:MM）` 章节
 2. **模式二交付**：
-   - **零件托盘 1（唯一持久化存证 SSOT）**：`data/{销售日}/{matchId}.db`（27 个分析端点 `endpoint_payload` + 四个中文入口表 + `欧指变盘` 明细 + 13 个只读 `v_*` 视图）
+   - **零件托盘 1（唯一持久化存证 SSOT）**：`data/{销售日}/{matchId}.db`（最终七表：`球队基本情况`/`欧指`/`欧指变盘`/`亚盘`/`亚盘变盘`/`大小球`/`大小球变盘`；0 视图）
    - **交接物（仓库外临时）**：Scrapling 导出的 JSONL，ETLX 载入成功并删库后即删除
    - **零件托盘 1 伴随视图（面向人类的可选简报）**：`data/{销售日}/{matchId}.md`
 3. **出厂放行断言**：
-   - SQLite `.db` 落盘且新鲜有效（<30分钟）、`PRAGMA integrity_check` 通过、门禁 `violations=0`，合格集群放行推进推演阶段！
+   - SQLite `.db` 落盘且新鲜有效（<30分钟）、`PRAGMA integrity_check` 通过、`GATE_LIVE=0` 且 `GATE_FINAL=0`，合格集群放行推进推演阶段！
    - **进货局专职物理采掘，严禁思考盘赔逻辑、严禁定性胜负、严禁猜想赛果！**
 
 ---
