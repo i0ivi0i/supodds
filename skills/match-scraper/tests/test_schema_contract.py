@@ -86,7 +86,7 @@ class SchemaContractTest(unittest.TestCase):
             "球队基本情况": {
                 "比赛ID", "数据类型", "联赛", "主队", "客队",
                 "开球时间", "竞彩编号", "销售日", "队伍", "身份",
-                "姓名", "伤停原因", "数据指纹", "采集时间", "来源端点",
+                "姓名", "伤停原因",
             },
             "欧指": {
                 "比赛ID", "机构编号", "机构", "机构顺序",
@@ -133,9 +133,8 @@ class SchemaContractTest(unittest.TestCase):
     def test_team_info_rejects_duplicate_source_key(self):
         sql = """
             INSERT INTO "球队基本情况" (
-              "比赛ID", "数据类型", "队伍", "身份", "姓名", "项目",
-              "源序号", "来源端点"
-            ) VALUES ('3018847', '阵容', '主队', '首发', '古拉西', '', 0, 'odds.html')
+              "比赛ID", "数据类型", "队伍", "身份", "姓名"
+            ) VALUES ('3018847', '阵容', '主队', '首发', '古拉西')
         """
         self.conn.execute(sql)
         with self.assertRaises(sqlite3.IntegrityError):

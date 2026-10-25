@@ -48,7 +48,7 @@ metadata:
   - [5.3 欧洲指数 23 家做市商法定名单与提取契约](#53-欧洲指数-23-家做市商法定名单与提取契约)
   - [5.4 Polymarket 链上预测市场进货标准（Polymarket 端点）](#54-polymarket-链上预测市场进货标准polymarket-端点)
 - [第六工段：Poka-Yoke 双重物理质检门禁与标准零件托盘 1 交付](#第六工段poka-yoke-双重物理质检门禁与标准零件托盘-1-交付)
-  - [6.1 双重物理质检门禁（SQLite 存证 27 行满配 vs 人类简报黄金装配）](#61-双重物理质检门禁sqlite-存证-27-行满配-vs-人类简报黄金装配)
+  - [6.1 双重物理质检门禁（SQLite 七表满配 vs 人类简报黄金装配）](#61-双重物理质检门禁sqlite-七表满配-vs-人类简报黄金装配)
   - [6.2 出厂交付标准零件托盘 1（模式一 & 模式二交付契约）](#62-出厂交付标准零件托盘-1模式一-模式二交付契约)
 - [第七工段：单 IP 礼貌防封控频宪法与 ProxyRotator 代理集成规范](#第七工段单-ip-礼貌防封控频宪法与-proxyrotator-代理集成规范)
   - [7.1 Scrapling 官方 AutoThrottle 自适应控频与单并发限流](#71-scrapling-官方-autothrottle-自适应控频与单并发限流)
@@ -546,7 +546,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
 - **二不：绝不写入假数据（Anti-Fake-Data Guardrail）**：
   - **存证 100% 物理真实（SQLite SSOT Invariant）**：`data/{销售日}/{matchId}.db` 的最终七表必须 100% 由 ETLX 从官方 JSONL 的真实活水响应直接投影；JSONL 必须来自 Scrapling Spider 的网络响应，严禁任何 Agent 手工编造、硬编码 mock 数据或篡改报文；
   - **未开盘严禁脑补（Zero Hallucinated Odds）**：凡机构未开盘（如香港马会次级联赛未开亚盘、体彩深盘未开单关）或 Polymarket 未开设当场预测合约，**必须且只能**如实标注 `[官方未开盘]`！绝对严禁在后台或前端硬编码伪造赔率（如伪造“60.5¢”挂单、伪造 Crown 波胆或伪造伤停）。宁可报缺报阻，绝不造假脑补！
-  - **真实哈希反作弊（SQLite Anti-Tampering）**：JSONL 中每条端点记录必须携带 `chars`、`sha256`、`raw_sha256` 且与内容长度/哈希一致；最终 `球队基本情况` 的 27 条 `数据状态` 必须把 `数据指纹` 与 `采集时间` 原样带入，虚报立即熔断报警。
+  - **真实哈希反作弊（SQLite Anti-Tampering）**：JSONL 中每条端点记录必须携带 `chars`、`sha256`、`raw_sha256` 且与内容长度/哈希一致；最终 `球队基本情况` 只保留比赛信息、阵容、伤停，`数据状态`/`数据指纹`/`采集时间` 留在抓取层 JSONL，虚报立即熔断报警。
 - **三不：数据绝不能放错（Anti-Misplacement & Strict Mapping Guardrail）**：
   - **做市商 ID 字典级刚性锁死**：以 21 家欧指 cid 与 7 家亚盘/大小球 cid 两套字典构建 Hash Map 进行常数级精确提取，`parts[0]` 为机构 ID (`cid`)，**绝对严禁错用 `parts[1]`**！绝不把平博的数据填到皇冠，绝不把澳彩的水位错放进马会；188Bet 只有亚盘 cid=42，欧指无 cid，42=18Bet 严禁冒充；
   - **盘口赔率三要素槽位强断言**：
@@ -568,7 +568,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
   - **23 项布尔存在性核销**：组装简报时必须逐家执行布尔核对清单（Boolean Checklist），除体彩深盘不开单固、次级联赛香港马会未开亚盘外，所有法定做市商缺失立即判定为采集遗漏并物理阻断，缺失项必须显式标记「官方未开盘」，严禁静默漏报！
 - **护栏三：In-Flight Selector Pushdown & 28 个采集端点 Schema 防伪（27 分析 + 1 交付）**：
   - **选择器底层下推（`css_selector`）**：抓取 HTML 页面时强制传递精确选择器：21 张变盘流水表用 `css_selector="#odds2 table"`；亚盘/大小球全景总表用 `css_selector="#table_odds"`；分析页用完整 HTML（可选 `#porlet_*`）；波胆用 `#analy_sbAllOdds`；禁止再用已失效的 `#team_lineup`。
-  - **28 个采集端点 → 最终七表 Schema 强断言**：JSONL 必须包含 27 个分析端点键（`1x2d.js`, `analysis.html`, `odds.html`, `analy.json`, `asian_odds.html`, `over_under.html`, 7家机构21张流水HTML）；`polymarket.json` 不入分析库；ETLX 直接投影后最终库只能有 7 张表，`球队基本情况` 必须生成 27 条数据状态 + 22 条机构状态。任何通过填充乱码、空白字符串或伪造文本虚标体积的行为，均会导致 JSON 解析破裂与装配阶段直接抛出错误，从物理根源杜绝 AI 作弊填充！
+  - **28 个采集端点 → 最终七表 Schema 强断言**：JSONL 必须包含 27 个分析端点键（`1x2d.js`, `analysis.html`, `odds.html`, `analy.json`, `asian_odds.html`, `over_under.html`, 7家机构21张流水HTML）；`polymarket.json` 不入分析库；ETLX 直接投影后最终库只能有 7 张表，`球队基本情况` 只保留比赛信息、阵容、伤停，不再生成 `数据状态` 或 `机构状态` 行。任何通过填充乱码、空白字符串或伪造文本虚标体积的行为，均会导致 JSON 解析破裂与装配阶段直接抛出错误，从物理根源杜绝 AI 作弊填充！
 - **护栏四：Dynamic DOM Escalation Guardrail（动态渲染升级护栏，防空壳抽稀）**：
   - **空骨架判定标准**：若 Level 1 请求提取到的数据表格行数（`<tr>` 数量）$< 2$ 且页面包含动态加载脚本，自动无缝升阶至 `mcp__scrapling__browser_fetch(network_idle=True)`，等待网络静默完成再抽取 DOM，彻底杜绝只抓 190 行残缺骨架！
 
@@ -611,7 +611,7 @@ Feed 以 `$` 分为前后两段：前段是联赛字典（`#` 分隔）；后段
 
 ## 第五工段：模式二·单场【推演源数据】采集与 28 端点装配
 
-底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料的唯一持久化存证 SSOT，推演看数强制由 EvoOntology 官方 MCP 视网膜工具链驱动，专供推演大脑在 Mapping 权威路径指引下全量提取结构化字段（严禁跳过 EvoOntology 官方 MCP 视网膜工具链全包裸读 SQLite payload，严禁看 .md）；`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
+底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料经 ETLX 投影后的最终七表 SSOT；27 个端点回执、哈希与采集时间留在抓取层 JSONL，不进入最终库。推演看数强制由 EvoOntology 官方 MCP 视网膜工具链驱动，专供推演大脑在 Mapping 权威路径指引下全量提取结构化字段（严禁跳过 EvoOntology 官方 MCP 视网膜工具链全包裸读 SQLite payload，严禁看 .md）；`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
 
 ### 5.1 Scrapling 官方 API 进货入口：项目适配器 Spider 主路径，MCP 降级
 
@@ -631,7 +631,7 @@ ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd6
 "$ETLX" -config data/pipeline.md -date {销售日} -file <临时.jsonl>
 ```
 
-`data/schema.sql` 只建**七张最终业务表**，全部 STRICT、0 视图；建表顺序固定为 `球队基本情况` → `欧指` → `欧指变盘` → `亚盘` → `亚盘变盘` → `大小球` → `大小球变盘`，SQLite 的物理抽屉顺序与之一致；没有 staging 物理表、没有 `schema_final.sql`、没有第二个库。`data/pipeline.md` 的 `BUILD_FINAL` 直接 `read_json_auto('{file}')`，用 14 个 DuckDB `CREATE TEMP TABLE` 在内存解析，只执行 7 条 `INSERT INTO DB."<表>"`；临时表随 ETLX 连接销毁，**落盘库天然只有七表**。`GATE_FINAL` 是官方 `runs_as: DATA_QUALITY` 块，与 `BUILD_FINAL` 在同一次 ETLX 运行中自动执行，核销七表、0 视图、`data_status_rows=27`、`bookmaker_status_rows=22` 与各表非空。
+`data/schema.sql` 只建**七张最终业务表**，全部 STRICT、0 视图；建表顺序固定为 `球队基本情况` → `欧指` → `欧指变盘` → `亚盘` → `亚盘变盘` → `大小球` → `大小球变盘`，SQLite 的物理抽屉顺序与之一致；没有 staging 物理表、没有 `schema_final.sql`、没有第二个库。`data/pipeline.md` 的 `BUILD_FINAL` 直接 `read_json_auto('{file}')`，用 DuckDB `CREATE TEMP TABLE` 在内存解析，只执行 7 条 `INSERT INTO DB."<表>"`；临时表随 ETLX 连接销毁，**落盘库天然只有七表**。`GATE_FINAL` 是官方 `runs_as: DATA_QUALITY` 块，与 `BUILD_FINAL` 在同一次 ETLX 运行中自动执行，核销七表、0 视图、`team_info_rows` 与各表非空。
 
 ETLX 成功后直接晋升；**没有 ETLX 之后的 Python 清理，也没有 VACUUM**：
 
@@ -641,7 +641,7 @@ cp data/.build/build.db "data/{销售日}/{matchId}.db"
 rm -rf data/.build
 ```
 
-外部只读复核至少检查：`sqlite_master` 中只有七张业务表且 0 视图；`球队基本情况` 行数 = 1 + `数据类型` 的阵容/伤停/技术统计 + 27 + 22；`欧指`=21；`欧指变盘`、`亚盘变盘`、`大小球变盘` 均非空；`球队基本情况` 的 `数据状态` 27 行、`机构状态` 22 行；`PRAGMA integrity_check=ok`。失败时保留 `data/.build/build.db` 供检查，不动旧最终库。**批量进货只走这条主路径。** JSONL 是仓库外临时交接物，成功后删除。ETLX 若打印 `Error loading .env file` 但 exit 0 且行数正确，属非致命噪声；以 SQLite 只读复核为准，不能只看 ETLX 退出码。
+外部只读复核至少检查：`sqlite_master` 中只有七张业务表且 0 视图；`球队基本情况` 行数 = 1 + `数据类型` 的阵容/伤停；`欧指`=21；`欧指变盘`、`亚盘变盘`、`大小球变盘` 均非空；`PRAGMA integrity_check=ok`。`球队基本情况` 固定为 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`；行顺序固定为 比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。失败时保留 `data/.build/build.db` 供检查，不动旧最终库。**批量进货只走这条主路径。** JSONL 是仓库外临时交接物，成功后删除。ETLX 若打印 `Error loading .env file` 但 exit 0 且行数正确，属非致命噪声；以 SQLite 只读复核为准，不能只看 ETLX 退出码。
 
 **降级/诊断（单端点或工具不可用时）**：以下 MCP 三部曲只作单请求诊断与降级，不得用来冒充 28 端点原子装配。
 
@@ -712,9 +712,9 @@ rm -rf data/.build
 
 1. **最终七表存证满配门禁（`data/{销售日}/{matchId}.db`）**：
    - `sqlite_master` 必须只有 7 张业务表、0 视图；不得有 `endpoint_payload`、任何 staging 表或 `v_*`；
-   - `球队基本情况` 必须是 1 + `数据类型` 为阵容/伤停/技术统计的行数 + 27 + 22；其中 `数据状态` 27 行且 distinct `来源端点` 27，`机构状态` 22 行且 distinct `机构` 22；
+   - `球队基本情况` 必须是 1 + `数据类型` 为阵容/伤停的行数；
    - `欧指` 21 行；`欧指变盘`、`亚盘变盘`、`大小球变盘` 均非空，且变盘时间按时间轴排列；
-   - `GATE_FINAL` 必须断言 `final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`data_status_rows=27`、`bookmaker_status_rows=22`；`PRAGMA integrity_check=ok`；
+   - `GATE_FINAL` 必须断言 `final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`team_info_rows=1`、`team_info_types=1`；`PRAGMA integrity_check=ok`；
    - **没有 staging 层可供对账**：原始 JSONL 是仓库外临时交接物；最终七表就是唯一持久化事实。禁止再把 staging 表、raw payload 或 `.md` 当作推演输入。
 2. **人类可视化简报黄金装配门禁（可选看板 `data/{销售日}/{matchId}.md`；仅当生成时执行，不生成不影响 `.db` 与分析）**：
    - **严禁全页裸拼（Zero Full-Page Dump Invariant）**：绝对严禁将 `analysis.html` 全文或未加选择器的 HTML 页面直接调用 `markdown()` 倾倒入 `.md` 简报！`.md` 文件必须由六大标准组件自底向上纯净构建；

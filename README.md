@@ -249,7 +249,7 @@ flowchart TD
 │   └── {销售日}/
 │       ├── meta.md          # 当日赛程全景索引
 │       ├── {matchId}.md     # 可选人类可视化推演快照
-│       └── {matchId}.db     # SQLite 唯一持久化真相（27 个分析端点）
+│       └── {matchId}.db     # SQLite 唯一持久化业务真相（比赛信息/阵容/伤停 + 六张赔率表）
 ├── docs/                    # 系统设计规范与工业演化文档
 ├── graphify-out/            # Graphify 5.6MB 全息博弈知识图谱与反思词条
 ├── memory/                  # 每日记忆流水线唯一单写原子落盘

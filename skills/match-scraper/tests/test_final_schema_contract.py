@@ -40,7 +40,7 @@ class FinalSchemaContractTest(unittest.TestCase):
     def test_final_schema_is_strict_and_has_stable_columns(self):
         self.assertIn("STRICT", self.schema.upper())
         expected = {
-            "球队基本情况": {"数据类型", "项目", "指标", "数值", "文本值", "数据指纹", "采集时间", "来源端点"},
+            "球队基本情况": {"数据类型", "队伍", "身份", "姓名", "伤停原因"},
             "欧指": {"机构顺序", "最新主胜", "最新平局", "最新客胜", "来源端点"},
             "欧指变盘": {"机构顺序", "源序号", "变盘时间", "主胜赔率", "平局赔率", "客胜赔率", "来源端点"},
             "亚盘": {"机构顺序", "盘口序号", "源序号", "最新盘口"},
@@ -59,9 +59,8 @@ class FinalSchemaContractTest(unittest.TestCase):
     def test_team_info_rejects_duplicate_source_key(self):
         sql = """
             INSERT INTO "球队基本情况" (
-              "比赛ID", "数据类型", "队伍", "身份", "姓名", "项目",
-              "源序号", "来源端点"
-            ) VALUES ('3018847', '阵容', '主队', '首发', '古拉西', '', 0, 'odds.html')
+              "比赛ID", "数据类型", "队伍", "身份", "姓名"
+            ) VALUES ('3018847', '阵容', '主队', '首发', '古拉西')
         """
         self.conn.execute(sql)
         with self.assertRaises(sqlite3.IntegrityError):

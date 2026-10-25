@@ -4,7 +4,7 @@
 
 CREATE TABLE "球队基本情况" (
   "比赛ID" TEXT NOT NULL,
-  "数据类型" TEXT NOT NULL CHECK ("数据类型" IN ('比赛信息', '阵容', '伤停', '技术统计', '数据状态', '机构状态')),
+  "数据类型" TEXT NOT NULL CHECK ("数据类型" IN ('比赛信息', '阵容', '伤停')),
   "联赛" TEXT,
   "主队" TEXT,
   "客队" TEXT,
@@ -15,23 +15,9 @@ CREATE TABLE "球队基本情况" (
   "身份" TEXT NOT NULL,
   "号码" TEXT,
   "姓名" TEXT NOT NULL,
-  "球员ID" TEXT,
   "位置" TEXT,
-  "队长" INTEGER,
-  "球员类型" INTEGER,
   "伤停原因" TEXT,
-  "项目" TEXT NOT NULL,
-  "指标" TEXT,
-  "数值" REAL,
-  "文本值" TEXT,
-  "机构编号" INTEGER,
-  "机构" TEXT,
-  "状态" TEXT,
-  "数据指纹" TEXT,
-  "采集时间" TEXT,
-  "源序号" INTEGER NOT NULL,
-  "来源端点" TEXT NOT NULL,
-  PRIMARY KEY ("比赛ID", "数据类型", "来源端点", "队伍", "身份", "项目", "姓名", "源序号")
+  PRIMARY KEY ("比赛ID", "数据类型", "队伍", "身份", "姓名")
 ) STRICT;
 CREATE TABLE "欧指" (
   "比赛ID" TEXT NOT NULL,

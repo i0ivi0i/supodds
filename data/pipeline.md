@@ -682,60 +682,6 @@ j_analy AS (
     regexp_extract(content, '(?s)var jsonData\s*=\s*(\{.*?\});', 1) AS s
   FROM raw_analy
 ),
-points AS (
-  SELECT
-    'currentPoints' AS section,
-    'home' AS side,
-    unnest(json_extract(s, '$.currentPoints.homePoints.points[*]')) AS point
-  FROM j
-  UNION ALL
-  SELECT 'currentPoints', 'away',
-    unnest(json_extract(s, '$.currentPoints.awayPoints.points[*]'))
-  FROM j
-  UNION ALL
-  SELECT 'halfPoints', 'home',
-    unnest(json_extract(s, '$.currentPoints.halfHomePoints.points[*]'))
-  FROM j
-  UNION ALL
-  SELECT 'halfPoints', 'away',
-    unnest(json_extract(s, '$.currentPoints.halfAwayPoints.points[*]'))
-  FROM j
-),
-point_rows AS (
-  SELECT
-    section,
-    side,
-    row_number() OVER (PARTITION BY section, side, point->>'name') - 1 AS source_index,
-    point->>'name' AS item,
-    e.key AS metric,
-    try_cast(json_extract_string(point, '$.' || e.key) AS DOUBLE) AS value,
-    CASE
-      WHEN try_cast(json_extract_string(point, '$.' || e.key) AS DOUBLE) IS NULL
-      THEN json_extract_string(point, '$.' || e.key)
-    END AS text_value
-  FROM points,
-  json_each(point) e
-),
-statistics AS (
-  SELECT
-    unnest(json_extract(s, '$.leagueStatistics.statisticses[*]')) AS stat
-  FROM j
-),
-stat_rows AS (
-  SELECT
-    'leagueStatistics' AS section,
-    'match' AS side,
-    row_number() OVER (PARTITION BY stat->>'round') - 1 AS source_index,
-    'round_' || coalesce(stat->>'round', 'unknown') AS item,
-    e.key AS metric,
-    try_cast(json_extract_string(stat, '$.' || e.key) AS DOUBLE) AS value,
-    CASE
-      WHEN try_cast(json_extract_string(stat, '$.' || e.key) AS DOUBLE) IS NULL
-      THEN json_extract_string(stat, '$.' || e.key)
-    END AS text_value
-  FROM statistics,
-  json_each(stat) e
-),
 features AS (
   SELECT
     unnest(json_extract(s, '$.matchFeature.features[*]')) AS feature
@@ -746,12 +692,21 @@ feature_rows AS (
     'matchFeature' AS section,
     'match' AS side,
     row_number() OVER (PARTITION BY feature->>'title') - 1 AS source_index,
-    feature->>'title' AS item,
+    'matchFeature:' || coalesce(feature->>'title', 'unknown') AS item,
     e.key AS metric,
-    NULL::DOUBLE AS value,
-    json_extract_string(feature, '$.' || e.key) AS text_value
+    try_cast(json_extract_string(feature, '$.' || e.key) AS DOUBLE) AS value,
+    CASE
+      WHEN try_cast(json_extract_string(feature, '$.' || e.key) AS DOUBLE) IS NULL
+      THEN json_extract_string(feature, '$.' || e.key)
+    END AS text_value
   FROM features,
   json_each(feature) e
+  WHERE e.key <> 'title'
+    AND (
+      try_cast(feature->>'win' AS DOUBLE) IS NOT NULL
+      OR try_cast(feature->>'draw' AS DOUBLE) IS NOT NULL
+      OR try_cast(feature->>'loss' AS DOUBLE) IS NOT NULL
+    )
 ),
 xg_items AS (
   SELECT
@@ -778,17 +733,13 @@ xg_rows AS (
     'xg' AS section,
     side,
     row_number() OVER (PARTITION BY side) - 1 AS source_index,
-    coalesce(item->>'kind', 'xg') AS item,
-    'xg' AS metric,
+    'xg' AS item,
+    coalesce(item->>'kind', 'xg') AS metric,
     try_cast(side_obj->>'text' AS DOUBLE) AS value,
     nullif(trim(side_obj->>'text'), '') AS text_value
   FROM xg_sides
 ),
 all_rows AS (
-  SELECT * FROM point_rows
-  UNION ALL
-  SELECT * FROM stat_rows
-  UNION ALL
   SELECT * FROM feature_rows
   UNION ALL
   SELECT * FROM xg_rows
@@ -798,7 +749,9 @@ SELECT
   section, side, item, metric, value, text_value,
   source_index,
   CASE WHEN section = 'xg' THEN 'analy.json' ELSE 'analysis.html' END AS source_endpoint
-FROM all_rows;
+FROM all_rows
+WHERE value IS NOT NULL
+   OR nullif(trim(text_value), '') IS NOT NULL;
 
 CREATE TEMP TABLE endpoint_parse_status AS
 SELECT
@@ -863,60 +816,42 @@ SELECT
 FROM endpoint_payload p;
 
 -- Write only business facts into the seven final tables in the same working DB.
--- Staging tables remain until the post-ETLX SQLite cleanup.
+-- Temporary parse tables disappear with this DuckDB connection; the final SQLite file has seven tables only.
+-- Fixed human order: match info -> home starters -> away starters -> home bench -> away bench -> home injuries -> away injuries.
 INSERT INTO DB."球队基本情况" (
   "比赛ID", "数据类型", "联赛", "主队", "客队", "开球时间", "竞彩编号", "销售日",
-  "队伍", "身份", "号码", "姓名", "球员ID", "位置", "队长", "球员类型", "伤停原因",
-  "项目", "指标", "数值", "文本值", "机构编号", "机构", "状态", "数据指纹", "采集时间",
-  "源序号", "来源端点"
+  "队伍", "身份", "号码", "姓名", "位置", "伤停原因"
 )
 SELECT
-  m.match_id, '比赛信息', m.league, m.home_team, m.away_team, m.kickoff_at, m.match_no, m.sales_date,
-  '比赛', '比赛', NULL, '', NULL, NULL, NULL, NULL, NULL,
-  '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  0, 'meta.md'
-FROM match_meta m
-UNION ALL
-SELECT
-  l.match_id, '阵容', NULL, NULL, NULL, NULL, NULL, NULL,
-  CASE l.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
-  CASE l.role WHEN 'starter' THEN '首发' WHEN 'bench' THEN '替补' ELSE '其他身份' END,
-  l.number, l.name, l.player_id, l.position, NULL, NULL, NULL,
-  '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  l.source_index, l.source_endpoint
-FROM lineup l
-UNION ALL
-SELECT
-  i.match_id, '伤停', NULL, NULL, NULL, NULL, NULL, NULL,
-  CASE i.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
-  '伤停', i.number, i.name, i.player_id, i.position, i.captain_type, i.player_kind, i.injury_reason,
-  '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-  i.source_index, i.source_endpoint
-FROM injury i
-UNION ALL
-SELECT
-  s.match_id, '技术统计', NULL, NULL, NULL, NULL, NULL, NULL,
-  CASE s.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '比赛' END,
-  '技术统计', NULL, s.item, NULL, NULL, NULL, NULL, NULL,
-  s.section, s.metric, s.value, s.text_value, NULL, NULL, NULL, NULL, NULL,
-  s.source_index, s.source_endpoint
-FROM team_stats s
-UNION ALL
-SELECT
-  p.match_id, '数据状态', NULL, NULL, NULL, NULL, NULL, NULL,
-  '比赛', '数据状态', NULL, '', NULL, NULL, NULL, NULL, NULL,
-  '数据状态', NULL, CAST(p.row_count AS REAL), p.status, NULL, NULL, p.status, q.sha256, q.fetched_at,
-  ROW_NUMBER() OVER (ORDER BY p.endpoint_key) - 1, p.endpoint_key
-FROM endpoint_parse_status p
-JOIN endpoint_payload q
-  ON q.match_id = p.match_id AND q.endpoint_key = p.endpoint_key
-UNION ALL
-SELECT
-  b.match_id, '机构状态', NULL, NULL, NULL, NULL, NULL, NULL,
-  '比赛', '机构状态', NULL, '', NULL, NULL, NULL, NULL, NULL,
-  '机构槽位', NULL, NULL, b.evidence, b.euro_cid, b.bookmaker, b.eu_status, NULL, NULL,
-  ROW_NUMBER() OVER (ORDER BY b.bookmaker) - 1, 'bookmaker_slots'
-FROM bookmaker_slots b;
+  "比赛ID", "数据类型", "联赛", "主队", "客队", "开球时间", "竞彩编号", "销售日",
+  "队伍", "身份", "号码", "姓名", "位置", "伤停原因"
+FROM (
+  SELECT
+    m.match_id AS "比赛ID", '比赛信息' AS "数据类型", m.league AS "联赛",
+    m.home_team AS "主队", m.away_team AS "客队", m.kickoff_at AS "开球时间",
+    m.match_no AS "竞彩编号", m.sales_date AS "销售日",
+    '比赛' AS "队伍", '比赛' AS "身份", NULL AS "号码", '' AS "姓名",
+    NULL AS "位置", NULL AS "伤停原因", 0 AS "sort_index"
+  FROM match_meta m
+  UNION ALL
+  SELECT
+    l.match_id, '阵容', NULL, NULL, NULL, NULL, NULL, NULL,
+    CASE l.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
+    CASE l.role WHEN 'starter' THEN '首发' WHEN 'bench' THEN '替补' ELSE '其他身份' END,
+    l.number, l.name, l.position, NULL, l.source_index
+  FROM lineup l
+  UNION ALL
+  SELECT
+    i.match_id, '伤停', NULL, NULL, NULL, NULL, NULL, NULL,
+    CASE i.side WHEN 'home' THEN '主队' WHEN 'away' THEN '客队' ELSE '未知队伍' END,
+    '伤停', i.number, i.name, i.position, i.injury_reason, i.source_index
+  FROM injury i
+) AS team_info
+ORDER BY
+  CASE "数据类型" WHEN '比赛信息' THEN 0 WHEN '阵容' THEN 1 ELSE 2 END,
+  CASE "身份" WHEN '首发' THEN 0 WHEN '替补' THEN 1 ELSE 2 END,
+  CASE "队伍" WHEN '主队' THEN 0 WHEN '客队' THEN 1 ELSE 2 END,
+  "sort_index";
 
 INSERT INTO DB."欧指" (
   "比赛ID", "机构编号", "机构", "机构顺序",
@@ -1113,8 +1048,6 @@ WITH checks(gate, observed, expected) AS (
            1
            + (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '阵容')
            + (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '伤停')
-           + (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '技术统计')
-           + 27 + 22
       THEN 1 ELSE 0
     END, 1
   UNION ALL SELECT 'team_info_types',
@@ -1122,17 +1055,8 @@ WITH checks(gate, observed, expected) AS (
       WHEN (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '比赛信息') = 1
        AND (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '阵容') > 0
        AND (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '伤停') > 0
-       AND (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '技术统计') > 0
       THEN 1 ELSE 0
     END, 1
-  UNION ALL SELECT 'data_status_rows',
-    (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '数据状态'), 27
-  UNION ALL SELECT 'data_status_endpoints',
-    (SELECT COUNT(DISTINCT "来源端点") FROM DB."球队基本情况" WHERE "数据类型" = '数据状态'), 27
-  UNION ALL SELECT 'bookmaker_status_rows',
-    (SELECT COUNT(*) FROM DB."球队基本情况" WHERE "数据类型" = '机构状态'), 22
-  UNION ALL SELECT 'bookmaker_status_slots',
-    (SELECT COUNT(DISTINCT "机构") FROM DB."球队基本情况" WHERE "数据类型" = '机构状态'), 22
 )
 SELECT COALESCE(SUM(CASE WHEN observed = expected THEN 0 ELSE 1 END), 0) AS violations FROM checks;
 ```

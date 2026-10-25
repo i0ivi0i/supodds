@@ -74,6 +74,15 @@ class PipelineContractTest(unittest.TestCase):
         self.assertIn("json_extract(item, '$.home')", self.text)
         self.assertIn("json_extract(item, '$.away')", self.text)
 
+    def test_team_info_excludes_technical_and_bookmaker_metadata(self):
+        insert = self.text.split('INSERT INTO DB."球队基本情况"', 1)[1].split(";", 1)[0]
+        self.assertNotIn("'技术统计'", insert)
+        self.assertNotIn("'机构状态'", insert)
+        self.assertNotIn("FROM team_stats", insert)
+        self.assertNotIn("FROM bookmaker_slots", insert)
+        self.assertNotIn("数据指纹", insert)
+        self.assertNotIn("采集时间", insert)
+
     def test_euro_detail_has_clear_columns_and_chronological_order(self):
         block = self.text.split('INSERT INTO DB."欧指变盘"', 1)[1].split(";", 1)[0]
         for column in ("主胜赔率", "平局赔率", "客胜赔率"):
@@ -102,8 +111,8 @@ class PipelineContractTest(unittest.TestCase):
             "asian_history_rows",
             "ou_rows",
             "ou_history_rows",
-            "data_status_rows",
-            "bookmaker_status_rows",
+            "team_info_rows",
+            "team_info_types",
         ):
             self.assertIn(key, gate)
         self.assertIn("duckdb_tables()", gate)
