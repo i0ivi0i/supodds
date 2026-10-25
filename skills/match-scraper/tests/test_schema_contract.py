@@ -54,6 +54,26 @@ class SchemaContractTest(unittest.TestCase):
             )
         }
 
+    def test_schema_creates_tables_in_drawer_order(self):
+        actual = [
+            row[0]
+            for row in self.conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY rowid"
+            )
+        ]
+        self.assertEqual(
+            actual,
+            [
+                "球队基本情况",
+                "欧指",
+                "欧指变盘",
+                "亚盘",
+                "亚盘变盘",
+                "大小球",
+                "大小球变盘",
+            ],
+        )
+
     def test_schema_has_exactly_seven_final_tables(self):
         self.assertEqual(self._tables(), FINAL_NAMES)
         self.assertNotIn("CREATE VIEW", self.schema.upper())

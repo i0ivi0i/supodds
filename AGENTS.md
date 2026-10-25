@@ -608,7 +608,7 @@ flowchart LR
   4. JSONL 每条端点记录的 `chars` 必须与内容字符长度 1:1 精确匹配，`sha256(content)` 必须等于 `sha256`；最终 `球队基本情况` 的 27 条 `数据状态` 必须带入真实 `数据指纹` 与 `采集时间`，凡检测到哈希不符或手搓占位假数据，立即判定为作弊违规并物理阻断；
   5. 质检门禁 100% 依据 JSONL 的 27 个分析端点键、最终七表行数与 `GATE_FINAL` 布尔核销，守住第一性语义真相！Polymarket 只作交付链接，不进入分析库；
 - **法定 23 家权威做市商白名单核销**：
-  澳彩、皇冠、Bet365、易胜博、平博、香港马会、188Bet、威廉希尔、立博、伟德、Interwetten、Bwin、SNAI、必发、利记、沙巴、Marathon、Betway、Unibet、Paddy Power、10Bet、中国体彩，共 22 家博彩做市商；Polymarket 是第 23 个预测市场参考槽位，不是博彩公司。完整 cid 与别名见 `skills/match-scraper/references/bookmaker-roster.md`；逐项布尔校验杜绝遗漏！
+  澳彩、皇冠、Bet365、易胜博、平博、香港马会、188Bet、威廉希尔、立博、伟德、Interwetten、Bwin、SNAI、必发、利记、沙巴、Marathon、Betway、Unibet、Paddy Power、10Bet、中国体彩，共 22 家博彩做市商；Polymarket 是第 23 个预测市场参考槽位，不是博彩公司。完整 cid 与别名见 `config/datasources.json` 的 `tracked_bookmakers`；逐项布尔校验杜绝遗漏！
 - **人类可视化简报六重品控防错门禁（Poka-Yoke Markdown Gates）**：
   1. **Anti-Ad Gate（零广告污染）**：简报文本内严格禁止出现“新球会员”、“每天最低节省”、“下载App”等营销广告词，违规命中数 $\equiv 0$；
   2. **Anti-Collapse Gate（零表格坍塌）**：禁止全页 HTML 裸转 Markdown；任意单行中 `|` 字符数量必须 $\le 35$ 个，严禁生成 130 列表格横向炸裂乱码；

@@ -18,7 +18,7 @@ metadata:
 
 # 赛程与推演源数据采集（match-scraper）· 马斯克超级工厂工位 1
 
-> **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用 Scrapling 官方 Spider 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。`{matchId}.md` 仅为可选人类看板。
+> **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用基于 Scrapling 官方 API 的项目适配器 `ingest_spider.py` 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。`{matchId}.md` 仅为可选人类看板。
 
 ---
 
@@ -588,7 +588,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
   "stealthy_headers": true
 }
 ```
-*注：`index.aspx` 只是人类浏览入口，静态页面没有比赛行，绝不可作为数据源；Feed 只读入内存解析，读完即弃，**严禁落盘 `data/{日期}/bf_jc.txt` 或任何 `.txt` 中间文件**。字段表与 0 基月份规则见 `references/schedule-feed.md`。若遭遇 403 或反爬盾，允许在 Scrapling 内部升阶至 Level 2（`fetch` 或 `stealthy_fetch`）。
+*注：`index.aspx` 只是人类浏览入口，静态页面没有比赛行，绝不可作为数据源；Feed 只读入内存解析，读完即弃，**严禁落盘 `data/{日期}/bf_jc.txt` 或任何 `.txt` 中间文件**。字段表与 0 基月份规则见本节 4.2。若遭遇 403 或反爬盾，允许在 Scrapling 内部升阶至 Level 2（`fetch` 或 `stealthy_fetch`）。
 **若仍打不开，必须立即向主人置顶发出严重警报提示「🚨 球探赛程 Feed 无法打开，数据通道受阻！」**，同时记录工具错误、失败状态与恢复待办。严禁静默或掩盖。
 
 ### 4.2 解析 Feed 字段并提取实体
@@ -613,9 +613,9 @@ Feed 以 `$` 分为前后两段：前段是联赛字典（`#` 分隔）；后段
 
 底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料的唯一持久化存证 SSOT，推演看数强制由 EvoOntology 官方 MCP 视网膜工具链驱动，专供推演大脑在 Mapping 权威路径指引下全量提取结构化字段（严禁跳过 EvoOntology 官方 MCP 视网膜工具链全包裸读 SQLite payload，严禁看 .md）；`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
 
-### 5.1 Scrapling 官方进货入口：Spider 主路径，MCP 降级
+### 5.1 Scrapling 官方 API 进货入口：项目适配器 Spider 主路径，MCP 降级
 
-**主路径（批量、可原子装配）**：每场一次运行官方 `Spider` 常设工具：
+**主路径（批量、可原子装配）**：每场一次运行项目适配器 `ingest_spider.py`。它基于 Scrapling 官方 `Spider`/`FetcherSession`/`StealthyFetcher` API，额外承载 28 端点契约与 23 家做市商业务字典：
 
 ```text
 py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {YYYY-MM-DD} --home {主队} --away {客队} --output <仓库外临时.jsonl> [--force] [--polymarket-slug {slug}]
@@ -631,7 +631,7 @@ ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd6
 "$ETLX" -config data/pipeline.md -date {销售日} -file <临时.jsonl>
 ```
 
-`data/schema.sql` 只建**七张最终业务表**，全部 STRICT、0 视图；没有 staging 物理表、没有 `schema_final.sql`、没有第二个库。`data/pipeline.md` 的 `BUILD_FINAL` 直接 `read_json_auto('{file}')`，用 14 个 DuckDB `CREATE TEMP TABLE` 在内存解析，只执行 7 条 `INSERT INTO DB."<表>"`；临时表随 ETLX 连接销毁，**落盘库天然只有七表**。`GATE_FINAL` 是官方 `runs_as: DATA_QUALITY` 块，与 `BUILD_FINAL` 在同一次 ETLX 运行中自动执行，核销七表、0 视图、`data_status_rows=27`、`bookmaker_status_rows=22` 与各表非空。
+`data/schema.sql` 只建**七张最终业务表**，全部 STRICT、0 视图；建表顺序固定为 `球队基本情况` → `欧指` → `欧指变盘` → `亚盘` → `亚盘变盘` → `大小球` → `大小球变盘`，SQLite 的物理抽屉顺序与之一致；没有 staging 物理表、没有 `schema_final.sql`、没有第二个库。`data/pipeline.md` 的 `BUILD_FINAL` 直接 `read_json_auto('{file}')`，用 14 个 DuckDB `CREATE TEMP TABLE` 在内存解析，只执行 7 条 `INSERT INTO DB."<表>"`；临时表随 ETLX 连接销毁，**落盘库天然只有七表**。`GATE_FINAL` 是官方 `runs_as: DATA_QUALITY` 块，与 `BUILD_FINAL` 在同一次 ETLX 运行中自动执行，核销七表、0 视图、`data_status_rows=27`、`bookmaker_status_rows=22` 与各表非空。
 
 ETLX 成功后直接晋升；**没有 ETLX 之后的 Python 清理，也没有 VACUUM**：
 
@@ -671,7 +671,7 @@ rm -rf data/.build
 
 ### 5.2 单场法定 28 个底层端点双轨全景映射表（含亚盘/大小全景总表与保真解码）
 
-单场比赛全量装配为底层存证 `data/{销售日}/{matchId}.db`，确立 **Tier 1 聚合核心直达通道（高可用 CDN，永不封禁） + Tier 2 补充明细温和通道（单并发限流 2.0s，阻断自愈）** 双轨架构。**机器唯一契约是 `config/endpoints.json`；人类镜像见 `references/endpoint-manifest.md`；本表只是摘要。**
+单场比赛全量装配为底层存证 `data/{销售日}/{matchId}.db`，确立 **Tier 1 聚合核心直达通道（高可用 CDN，永不封禁） + Tier 2 补充明细温和通道（单并发限流 2.0s，阻断自愈）** 双轨架构。**机器唯一契约是 `config/endpoints.json`；本表只是摘要。**
 
 | 序号 | Payload Key | Tier | 请求目标 URL 规范 | 编码 | 选择器下推 / 模式 | 业务作用与说明 |
 | :---: | :--- | :---: | :--- | :--- | :--- | :--- |
@@ -688,7 +688,7 @@ rm -rf data/.build
 
 ### 5.3 欧洲指数 23 家做市商法定名单与提取契约
 
-在 `1x2d.js` 的 `var game=Array(...)` 中以 `parts[0]`（cid）作为唯一匹配依据，严格 1:1 对齐 `config/datasources.json` 的 `tracked_bookmakers` 与 `references/bookmaker-roster.md`。**本技能不再复制完整 cid 表，避免三套名单漂移。**
+在 `1x2d.js` 的 `var game=Array(...)` 中以 `parts[0]`（cid）作为唯一匹配依据，严格 1:1 对齐 `config/datasources.json` 的 `tracked_bookmakers`。**本技能不再复制完整 cid 表，避免名单漂移。**
 
 - **21 个 euro cid**：`80, 545, 281, 90, 177, 432, 115, 82, 81, 104, 255, 110, 2, 474, 649, 800, 482, 386, 826, 16, 1129`。
 - **188Bet**：`1x2d.js` 中不存在；只走 `changeDetail` 的 `change_cid=42`，以 `ah_42`、`ou_42` 非空和 `eu_42` 请求成功为证据，槽位标 `supported` + `route: changeDetail`。
