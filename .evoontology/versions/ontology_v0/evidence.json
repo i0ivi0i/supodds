@@ -1,26 +1,58 @@
 [
   {
-    "id": "evidence_match_3019156",
-    "source": "data/2026-10-16/3019156.md",
-    "query": "match_3019156_nuremberg",
-    "result": "科特布斯1:1纽伦堡：体彩降至1.57平博1.93不动，亚盘升半一挂满水临场退半球，平赔4.10+，泊松1:1第二位",
-    "validation_method": "historical_match_audit",
-    "timestamp": "2026-10-17T13:40:00Z"
+    "id": "ev_v0_seven_tables",
+    "query": "SELECT type, name FROM sqlite_master WHERE type IN ('table','view') ORDER BY type, name;",
+    "result": "7 tables, 0 views: 亚盘, 亚盘变盘, 大小球, 大小球变盘, 欧指, 欧指变盘, 球队基本情况.",
+    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+    "timestamp": "2026-10-25T08:20:00Z",
+    "validation_method": "read-only SQLite schema inspection"
   },
   {
-    "id": "evidence_case_santos_flamengo",
-    "source": "MEMORY.md",
-    "query": "crossmarket_santos_flamengo",
-    "result": "桑托斯vs弗拉门戈：欧指折合半球低水，亚盘实际平半高水，跨市场脱节出货，最终下盘打出",
-    "validation_method": "literature_and_case_audit",
-    "timestamp": "2026-10-17T16:00:00Z"
+    "id": "ev_v0_row_counts",
+    "query": "SELECT COUNT(*) FROM each of the seven final tables;",
+    "result": "球队基本情况=417, 欧指=21, 欧指变盘=345, 亚盘=22, 亚盘变盘=162, 大小球=24, 大小球变盘=116.",
+    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+    "timestamp": "2026-10-25T08:20:00Z",
+    "validation_method": "read-only SQLite row-count inspection"
   },
   {
-    "id": "evidence_case_dortmund_bologna",
-    "source": "MEMORY.md",
-    "query": "favorite_melt_dortmund_bologna",
-    "result": "多特蒙德vs博洛尼亚：多特主胜1.28大热穿仓，体彩关停HAD仅开让球，做市商逼平让平/让负双通杀",
-    "validation_method": "literature_and_case_audit",
-    "timestamp": "2026-10-17T16:00:00Z"
+    "id": "ev_v0_status_counts",
+    "query": "SELECT COUNT(*) AS rows, COUNT(DISTINCT 来源端点) AS endpoints FROM 球队基本情况 WHERE 数据类型='数据状态'; SELECT COUNT(*) AS rows, COUNT(DISTINCT 机构编号) AS bookmakers FROM 球队基本情况 WHERE 数据类型='机构状态';",
+    "result": "数据状态: 27 rows, 27 distinct endpoints. 机构状态: 22 rows, 21 distinct 机构编号 (188Bet shares the change-detail 42 slot pattern).",
+    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+    "timestamp": "2026-10-25T08:20:00Z",
+    "validation_method": "read-only SQLite status inspection"
+  },
+  {
+    "id": "ev_v0_euro_sample",
+    "query": "SELECT 机构编号,机构,初盘主胜,初盘平局,初盘客胜,最新主胜,最新平局,最新客胜 FROM 欧指 WHERE 机构编号 IN (80,545,281,177,432) ORDER BY 机构顺序;",
+    "result": "澳彩 80: 1.23/5.15/8.90 -> 1.27/5.00/8.20; 皇冠 545: 1.34/5.20/8.90 -> 1.35/5.10/8.50; Bet365 281: 1.30/4.75/10.00 -> 1.30/5.00/11.00; 平博 177: 1.29/5.43/9.15 -> 1.32/5.53/10.22; 香港马会 432: 1.23/4.95/8.25 -> 1.23/4.90/8.50.",
+    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+    "timestamp": "2026-10-25T08:20:00Z",
+    "validation_method": "read-only SQLite value inspection"
+  },
+  {
+    "id": "ev_v0_ah_ou_sample",
+    "query": "SELECT 机构编号,机构,盘口序号,初盘主水,初盘盘口,初盘客水,最新主水,最新盘口,最新客水 FROM 亚盘 ORDER BY 机构顺序,盘口序号 LIMIT 5; SELECT 机构编号,机构,盘口序号,初盘大球,初盘盘口,初盘小球,最新大球,最新盘口,最新小球 FROM 大小球 ORDER BY 机构顺序,盘口序号 LIMIT 5;",
+    "result": "亚盘 澳彩 1: 0.99/1.50/0.85 -> 1.04/1.50/0.80; 皇冠 3: 1.00/1.50/0.88 -> 1.04/1.50/0.85. 大小球 澳彩 1: 0.92/2.75/0.88 -> 0.92/2.75/0.88; 皇冠 3: 0.95/2.75/0.92 -> 0.98/2.75/0.90.",
+    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+    "timestamp": "2026-10-25T08:20:00Z",
+    "validation_method": "read-only SQLite value inspection"
+  },
+  {
+    "id": "ev_v0_movement_bounds",
+    "query": "SELECT MIN(变盘时间), MAX(变盘时间), COUNT(*) FROM each movement table;",
+    "result": "欧指变盘: 2026-10-20 15:37 to 2026-10-25 14:00, 345 rows; 亚盘变盘: 2026-10-21 18:13 to 2026-10-25 14:00, 162 rows; 大小球变盘: 2026-10-21 18:13 to 2026-10-25 14:00, 116 rows.",
+    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+    "timestamp": "2026-10-25T08:20:00Z",
+    "validation_method": "read-only SQLite timestamp-range inspection"
+  },
+  {
+    "id": "ev_v0_integrity",
+    "query": "PRAGMA integrity_check; SELECT COUNT(*) FROM 球队基本情况;",
+    "result": "integrity_check=ok; 球队基本情况=417 rows.",
+    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+    "timestamp": "2026-10-25T08:20:00Z",
+    "validation_method": "read-only SQLite integrity inspection"
   }
 ]

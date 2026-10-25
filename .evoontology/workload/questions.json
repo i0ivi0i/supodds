@@ -1,10 +1,10 @@
 {
   "questions": [
     {
-      "id": "q_3003920_v5_live_read_path",
-      "question": "对 v6 活跃本体执行 3018847 七表只读验收：平博 机构编号 177、皇冠 545、Bet365 281、澳彩 80、香港马会 432 的最新主胜是否可从 欧指 读取，并核对 27 个数据状态与 22 个数据库机构状态。",
+      "id": "q_v0_integrity",
+      "question": "Verify a match database has exactly seven final tables, 27 data-status rows, 22 bookmaker-status slots, and explicit not_offered states without fabricated values.",
       "origin": "user",
-      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-24/3018847.db",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
       "provenance": [
         {
           "origin": "user",
@@ -13,13 +13,56 @@
         }
       ],
       "topics": [
-        "sqlite",
-        "v5",
-        "live-read"
+        "data_status",
+        "bookmaker_status",
+        "integrity",
+        "sqlite"
       ],
-      "recorded_at": "2026-10-24T05:15:53.912758+00:00",
+      "recorded_at": "2026-10-25T08:19:21.180151+00:00",
+      "purpose": "construction"
+    },
+    {
+      "id": "q_v0_ah_ou_read",
+      "question": "Read a match's Asian handicap and over/under opening and latest lines from the seven-table SQLite database, including bookmaker identity and full movement history.",
+      "origin": "user",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "provenance": [
+        {
+          "origin": "user",
+          "source_ref": "current request",
+          "evidence_refs": []
+        }
+      ],
+      "topics": [
+        "asian_handicap",
+        "over_under",
+        "movement",
+        "sqlite"
+      ],
+      "recorded_at": "2026-10-25T08:19:21.180133+00:00",
+      "purpose": "construction"
+    },
+    {
+      "id": "q_v0_euro_read",
+      "question": "Read a match's 1X2 opening and latest odds from the seven-table SQLite database, including bookmaker identity and timestamps for its movement history.",
+      "origin": "user",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "provenance": [
+        {
+          "origin": "user",
+          "source_ref": "current request",
+          "evidence_refs": []
+        }
+      ],
+      "topics": [
+        "euro_odds",
+        "bookmaker",
+        "movement",
+        "sqlite"
+      ],
+      "recorded_at": "2026-10-25T08:19:21.180053+00:00",
       "purpose": "construction"
     }
   ],
-  "updated_at": "2026-10-24T05:15:53.912822+00:00"
+  "updated_at": "2026-10-25T08:19:21.180238+00:00"
 }

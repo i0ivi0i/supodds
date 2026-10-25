@@ -1,52 +1,145 @@
 [
   {
-    "id": "rel_benchmark_vs_retail",
-    "source": "term_pinnacle_anchor",
-    "relation_type": "acts_as_truth_verifier_for",
-    "target": "term_headfake_surge",
-    "connection_condition": "pinnacle_flat_and_retail_dropped",
-    "description": "平博真金白银做市标杆用于验证商业庄脉冲冲高退盘动作是否为假摔",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
+    "connection_condition": "same 机构编号/机构 identity in 欧指",
+    "description": "A 1X2 quote belongs to one bookmaker.",
+    "evidence": [
+      "ev_v0_euro_sample"
+    ],
+    "id": "rel_euro_bookmaker",
+    "relation_type": "association",
+    "source": "term_euro_odds",
+    "target": "term_bookmaker"
   },
   {
-    "id": "rel_vacuum_vs_poisson",
-    "source": "term_draw_vacuum",
-    "relation_type": "bounded_by_physical_floor",
-    "target": "term_poisson_floor",
-    "connection_condition": "high_draw_odds_with_poisson_draw",
-    "description": "高平真空诱空表象受泊松物理进球底牌约束，防止过度恐高杀平",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
+    "connection_condition": "same 机构编号/机构 identity in 亚盘",
+    "description": "An Asian handicap line belongs to one bookmaker.",
+    "evidence": [
+      "ev_v0_ah_ou_sample"
+    ],
+    "id": "rel_ah_bookmaker",
+    "relation_type": "association",
+    "source": "term_asian_handicap",
+    "target": "term_bookmaker"
   },
   {
-    "id": "rel_crossmarket_vs_pinnacle",
-    "source": "term_constantinou_crossmarket",
-    "relation_type": "arbitraged_by",
-    "target": "term_pinnacle_anchor",
-    "connection_condition": "crossmarket_gap_exceeds_threshold",
-    "description": "欧亚跨市场门槛脱节时以平博真实去水欧亚折合为基准识别虚开出货",
-    "evidence_refs": ["evidence_case_santos_flamengo"],
-    "lifecycle_state": "active"
+    "connection_condition": "same 机构编号/机构 identity in 大小球",
+    "description": "An over/under line belongs to one bookmaker.",
+    "evidence": [
+      "ev_v0_ah_ou_sample"
+    ],
+    "id": "rel_ou_bookmaker",
+    "relation_type": "association",
+    "source": "term_over_under",
+    "target": "term_bookmaker"
   },
   {
-    "id": "rel_favorite_vs_squeeze",
-    "source": "term_levitt_favorite_melt",
-    "relation_type": "triggers_risk_hedging",
-    "target": "term_sporttery_had_squeeze",
-    "connection_condition": "favorite_melt_with_had_disabled",
-    "description": "豪门低赔极度扎堆时体彩常关闭基础HAD转为逼平风控，实现筹码穿仓风险对冲",
-    "evidence_refs": ["evidence_case_dortmund_bologna"],
-    "lifecycle_state": "active"
+    "connection_condition": "movement rows share match and 机构编号 with the 欧指 row",
+    "description": "1X2 movement is derived from successive 1X2 snapshots and must be read in timestamp order.",
+    "evidence": [
+      "ev_v0_movement_bounds"
+    ],
+    "id": "rel_euro_movement",
+    "relation_type": "derivation",
+    "source": "term_euro_odds",
+    "target": "term_odds_movement"
   },
   {
-    "id": "rel_score_vs_poisson",
-    "source": "term_egidi_score_snapping",
-    "relation_type": "cross_verifies",
-    "target": "term_poisson_floor",
-    "connection_condition": "crown_score_odds_match_poisson_top2",
-    "description": "皇冠波胆卡口设防低比分与独立泊松Top2高概率比分互相印证做市底牌",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
+    "connection_condition": "movement rows share match and 机构编号 with the 亚盘 row",
+    "description": "Asian handicap movement is derived from successive line/water snapshots and must be read in timestamp order.",
+    "evidence": [
+      "ev_v0_movement_bounds"
+    ],
+    "id": "rel_ah_movement",
+    "relation_type": "derivation",
+    "source": "term_asian_handicap",
+    "target": "term_odds_movement"
+  },
+  {
+    "connection_condition": "movement rows share match and 机构编号 with the 大小球 row",
+    "description": "Over/under movement is derived from successive line/water snapshots and must be read in timestamp order.",
+    "evidence": [
+      "ev_v0_movement_bounds"
+    ],
+    "id": "rel_ou_movement",
+    "relation_type": "derivation",
+    "source": "term_over_under",
+    "target": "term_odds_movement"
+  },
+  {
+    "connection_condition": "same 比赛ID in 球队基本情况 and 欧指",
+    "description": "A match exposes 1X2 odds through its 欧指 rows.",
+    "evidence": [
+      "ev_v0_row_counts"
+    ],
+    "id": "rel_match_euro",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_euro_odds"
+  },
+  {
+    "connection_condition": "same 比赛ID in 球队基本情况 and 亚盘",
+    "description": "A match exposes Asian handicap lines through its 亚盘 rows.",
+    "evidence": [
+      "ev_v0_row_counts"
+    ],
+    "id": "rel_match_ah",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_asian_handicap"
+  },
+  {
+    "connection_condition": "same 比赛ID in 球队基本情况 and 大小球",
+    "description": "A match exposes over/under lines through its 大小球 rows.",
+    "evidence": [
+      "ev_v0_row_counts"
+    ],
+    "id": "rel_match_ou",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_over_under"
+  },
+  {
+    "connection_condition": "same 比赛ID and team identity in 球队基本情况",
+    "description": "A match has injury records for its teams.",
+    "evidence": [
+      "ev_v0_row_counts"
+    ],
+    "id": "rel_match_injury",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_injury"
+  },
+  {
+    "connection_condition": "same 比赛ID and team identity in 球队基本情况",
+    "description": "A match has team statistics records.",
+    "evidence": [
+      "ev_v0_row_counts"
+    ],
+    "id": "rel_match_stats",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_team_stats"
+  },
+  {
+    "connection_condition": "same 比赛ID in 球队基本情况 status rows",
+    "description": "A match's data-status rows report capture completeness.",
+    "evidence": [
+      "ev_v0_status_counts"
+    ],
+    "id": "rel_match_data_status",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_data_status"
+  },
+  {
+    "connection_condition": "same 比赛ID in 球队基本情况 status rows",
+    "description": "A match's bookmaker-status slots report market coverage.",
+    "evidence": [
+      "ev_v0_status_counts"
+    ],
+    "id": "rel_match_bookmaker_status",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_bookmaker_status"
   }
 ]

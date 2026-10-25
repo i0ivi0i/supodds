@@ -1,98 +1,135 @@
 [
   {
-    "id": "constraint_pinnacle_stability",
-    "target": "term_pinnacle_anchor",
-    "constraint_type": "anomaly_check",
-    "trigger_keywords": ["平博", "pinnacle", "降赔", "商业庄", "纹丝不动"],
+    "confidence": "high",
+    "constraint_type": "business_rule",
+    "description": "Always order movement records by the physical timestamp 变盘时间 ascending. The earliest record is the opening snapshot and the latest record before kickoff is the latest snapshot. Never infer order from row position or from the word 初/即.",
+    "evidence": [
+      "ev_v0_movement_bounds"
+    ],
+    "id": "constraint_timestamp_order",
+    "scope": "All 欧指变盘, 亚盘变盘, and 大小球变盘 reads.",
     "severity": "block",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【标杆定海神针警报】商业庄与体彩单边剧烈降赔（>=0.15），但风控标杆平博变动绝对值<=0.03（几乎纹丝不动）。此为典型商业庄顺应散户偏见出货引流形态，强制禁止将商业庄降赔直接等同于机构防守，大模型必须在认知契约卡中显式对质平博未动原因！",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
+    "target": "term_odds_movement",
+    "trigger_keywords": [
+      "初盘",
+      "最新盘",
+      "变盘时间",
+      "时序",
+      "时间顺序",
+      "movement history"
+    ]
   },
   {
-    "id": "constraint_headfake_rebound",
-    "target": "term_headfake_surge",
-    "constraint_type": "pattern_check",
-    "trigger_keywords": ["假摔", "退盘", "满水", "冲高", "headfake"],
+    "confidence": "high",
+    "constraint_type": "data_quality",
+    "description": "An empty market is valid only when the source explicitly says it is not offered. Record it as not_offered; never fabricate a placeholder row or promote it to supported.",
+    "evidence": [
+      "ev_v0_status_counts"
+    ],
+    "id": "constraint_empty_state",
+    "scope": "All endpoint and bookmaker status reads.",
     "severity": "block",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【亚盘脉冲假摔警报】中盘亚盘曾出现主动升盘并挂超满水（>=1.04）诱多，但在终盘2小时仓皇退回初盘门槛。此为机构心虚放弃设防的假摔现行，强制禁止将初即终盘同一浅盘误判为全程平稳设防！",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
+    "target": "term_data_status",
+    "trigger_keywords": [
+      "未开盘",
+      "not_offered",
+      "空状态",
+      "缺失",
+      "empty"
+    ]
   },
   {
-    "id": "constraint_draw_extreme_high",
-    "target": "term_draw_vacuum",
-    "constraint_type": "risk_warning",
-    "trigger_keywords": ["平赔", "高平", "4.00", "筹码真空", "通杀"],
-    "severity": "warn",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【高平筹码真空警报】全网百家欧指平局赔率极端顶高至 4.00+。散户大众产生极度恐高心理，平局投注陷入筹码真空。做市商面临的大众净赔付为零甚至通杀，大模型绝对严禁因平赔过高主观一票否决平局！",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
-  },
-  {
-    "id": "constraint_poisson_retention",
-    "target": "term_poisson_floor",
-    "constraint_type": "retention_check",
-    "trigger_keywords": ["泊松", "poisson", "平局比分", "1:1", "底牌保护"],
+    "confidence": "high",
+    "constraint_type": "business_rule",
+    "description": "The analytical database exposes exactly seven final SQLite tables and zero views. Do not use staging tables, raw JSON, Markdown match files, or a second database as analysis input.",
+    "evidence": [
+      "ev_v0_seven_tables"
+    ],
+    "id": "constraint_seven_tables_only",
+    "scope": "All football match reads in this workspace.",
     "severity": "block",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【泊松数学底牌保护警报】由微观攻防得失球计算出的独立泊松比分前 2 位中包含平局（如 1:1），且与第一顺位概率差 <= 1.0%。大模型在推荐比分中严禁主观扼杀该平局比分！",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
+    "target": "term_match",
+    "trigger_keywords": [
+      "七表",
+      "视图",
+      "raw",
+      "md",
+      "staging",
+      "seven tables"
+    ]
   },
   {
-    "id": "constraint_crossmarket_misalignment",
-    "target": "term_constantinou_crossmarket",
-    "constraint_type": "anomaly_check",
-    "trigger_keywords": ["欧亚背离", "跨市场", "折合盘", "脱节", "constantinou"],
+    "confidence": "high",
+    "constraint_type": "data_quality",
+    "description": "The bookmaker status block contains 22 database slots, including 188Bet and China Sports Lottery. Polymarket is a delivery-only reference and must not be invented as a 23rd database bookmaker row.",
+    "evidence": [
+      "ev_v0_status_counts"
+    ],
+    "id": "constraint_bookmaker_slots",
+    "scope": "欧指, 亚盘, 大小球, and 机构状态.",
     "severity": "block",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【跨市场脱节出货警报 (Constantinou 2022)】欧指去水折合让球盘口与亚洲让球盘实际盘口相差 >= 0.5 档（如欧指折合让半球低水，亚盘实际平半高水或半一超高水）。机构利用两地市场信息不对称出货诱多，强制禁止将折合低价误当防守，大模型必须在契约卡中对质跨市场背离原因！",
-    "evidence_refs": ["evidence_case_santos_flamengo"],
-    "lifecycle_state": "active"
+    "target": "term_bookmaker_status",
+    "trigger_keywords": [
+      "23家",
+      "22家",
+      "机构状态",
+      "Polymarket",
+      "bookmaker status"
+    ]
   },
   {
-    "id": "constraint_favorite_melt_risk",
-    "target": "term_levitt_favorite_melt",
-    "constraint_type": "risk_warning",
-    "trigger_keywords": ["豪门", "低赔", "穿仓", "大热必死", "levitt"],
-    "severity": "warn",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【豪门低赔穿仓诱多警报 (Levitt 2004)】胜平负热门方赔率处于 1.20~1.35 极低区间且大众交易集中度极高。做市商面临净赔付被击穿风险，若让球盘水位持续高企拒不升盘阻筹，极大概率存在做市商逆向弃守爆冷伏击，严禁无脑做胆！",
-    "evidence_refs": ["evidence_case_dortmund_bologna"],
-    "lifecycle_state": "active"
-  },
-  {
-    "id": "constraint_score_snapping_defense",
-    "target": "term_egidi_score_snapping",
-    "constraint_type": "pattern_check",
-    "trigger_keywords": ["波胆", "皇冠波胆", "卡口", "低比分", "egidi"],
-    "severity": "warn",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【皇冠波胆矩阵卡口设防警报 (Egidi 2022)】皇冠波胆矩阵中 1:0/1:1/0:1 等核心低比分赔率极端压低且水位下调，但胜平负或让球盘却维持表面高赔。做市商真实比分结算敞口已锚定低比分，大模型严禁盲信表面大球诱惑！",
-    "evidence_refs": ["evidence_match_3019156"],
-    "lifecycle_state": "active"
-  },
-  {
-    "id": "constraint_sporttery_squeeze",
-    "target": "term_sporttery_had_squeeze",
-    "constraint_type": "anomaly_check",
-    "trigger_keywords": ["体彩单固", "关停HAD", "仅开让球", "逼平", "单固风控"],
+    "confidence": "high",
+    "constraint_type": "business_rule",
+    "description": "Never fill a missing odd, line, timestamp, team, or status by estimation or fabrication. Missing data stays an explicit gap or not_offered state.",
+    "evidence": [
+      "ev_v0_integrity"
+    ],
+    "id": "constraint_no_fabrication",
+    "scope": "All seven tables and all downstream reads.",
     "severity": "block",
-    "scope": "global",
-    "confidence_level": "high",
-    "description": "【体彩关停基础胜负逼平风控警报】中国体彩官方深盘比赛关闭普通胜负平（HAD=None）仅开让球胜平负（HHAD）。此为顶级内幕风控信号，做市商真实意图往往是深盘逼平让球方，诱导散户去让球下盘或让平，大模型必须推演体彩让球玩法并严禁弃推该场！",
-    "evidence_refs": ["evidence_case_dortmund_bologna"],
-    "lifecycle_state": "active"
+    "target": "term_match",
+    "trigger_keywords": [
+      "造假",
+      "补值",
+      "伪造",
+      "缺失",
+      "fabricate"
+    ]
+  },
+  {
+    "confidence": "high",
+    "constraint_type": "data_quality",
+    "description": "The data-status block must expose 27 rows across 27 distinct analysis endpoints. A smaller set means the capture is incomplete and must not be treated as a complete match database.",
+    "evidence": [
+      "ev_v0_status_counts"
+    ],
+    "id": "constraint_27_endpoints",
+    "scope": "球队基本情况 data-status reads.",
+    "severity": "block",
+    "target": "term_data_status",
+    "trigger_keywords": [
+      "27个端点",
+      "数据状态",
+      "endpoint",
+      "capture completeness"
+    ]
+  },
+  {
+    "confidence": "high",
+    "constraint_type": "enum_semantics",
+    "description": "The 1X2 table uses the 21 fixed euro cids: 80, 545, 281, 90, 177, 432, 115, 82, 81, 104, 255, 110, 2, 474, 649, 800, 482, 386, 826, 16, 1129. Match on cid, not on display name alone.",
+    "evidence": [
+      "ev_v0_euro_sample"
+    ],
+    "id": "constraint_euro_cids",
+    "scope": "欧指 and 欧指变盘 bookmaker identity.",
+    "severity": "block",
+    "target": "term_bookmaker",
+    "trigger_keywords": [
+      "欧指",
+      "cid",
+      "21家",
+      "bookmaker id"
+    ]
   }
 ]

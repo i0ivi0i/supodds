@@ -2,6 +2,8 @@
 
 Use this when a scrape claims success but the extracted table or source list may be incomplete.
 
+> **Project wiring (2026-10-25)**: this is the pre-JSONL capture gate for the football scraper. It is implemented in `skills/match-scraper/scripts/ingest_spider.py`; it is separate from ETLX `GATE_FINAL`, which checks the assembled seven SQLite tables. The exact mapping is at the end of this file.
+
 ## Choose the fetch path
 
 | Page behavior | Use | Why |
@@ -150,3 +152,18 @@ assert len(page.css("#data-table tr")) > 2
 ```
 
 Keep two fixtures: a header-only page that must fail, and a populated page that must pass. This catches the exact false positive that a text-based `|` gate misses.
+
+## Project wiring (football scraper)
+
+| This guide | Football implementation |
+| :--- | :--- |
+| Named-source completeness (28 endpoints, 23 bookmaker slots) | `load_contract()` and `_validate_contract()` in `scripts/ingest_spider.py`; `config/endpoints.json`; `config/datasources.json`; `tests/test_config_manifest.py` |
+| Header-only table rejection | `_table_data_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_header_only_table_fails_even_with_pipe_delimiters` |
+| Flattened mobile Markdown streams | `_mobile_stream_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_jammed_mobile_stream_rows_pass` |
+| Duplicate odds rows | `_duplicate_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_duplicate_table_rows_fail` |
+| Empty state vs success | `NO_OPEN_MARKERS`, `WAF_MARKERS`, and `assess_payload()`; `tests/test_ingest_classification.py::test_legal_empty_states` |
+| Missing source / request failure | `on_error()` and `_fill_missing()`; failures are surfaced in JSONL `state` / `errors`, not silently skipped |
+| JS global array (`1x2d.js`) | `extract_euro_cids()` and `parse_euro_history()`; `tests/test_ingest_classification.py::test_1x2d_missing_cid_fails` |
+| Browser fallback | `_browser_fetch()` behind the adapter's browser-fallback option |
+
+Scope boundary: these checks run before JSONL. The ETLX `GATE_FINAL` runs after JSONL and checks the seven final tables; neither gate replaces the other.
