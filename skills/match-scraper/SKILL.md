@@ -18,11 +18,9 @@ metadata:
 
 # 赛程与推演源数据采集（match-scraper）· 马斯克超级工厂工位 1
 
-> **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用基于 Scrapling 官方 API 的项目适配器 `ingest_spider.py` 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。EvoOntology 只读入口固定为 `data/.evo/current.db`，它是指向当前场次库的 NTFS 硬链接，不是副本、不是第二个库。`{matchId}.md` 仅为可选人类看板。
+> **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用基于 Scrapling 官方 API 的项目适配器 `ingest_spider.py` 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。`{matchId}.md` 仅为可选人类看板。
 >
-> **【DB 微调与 EvoOntology 失效边界】**：在七表名与列名不变的前提下，重写当前 `.db` 后重建硬链接，EvoOntology 的下一次只读查询会读到新数据；官方每次执行查询都新建 SQLite 只读连接，不缓存数据值。若 `ALTER`/`DROP`/`RENAME` 七表或列名，必须同步更新 `.evoontology` 的 Mapping 与 Evidence，再跑 `validate_semantics` 和真实查询探针；官方 `validate_semantics` 只校验本体结构，不校验底层表列是否存在。
->
-> **【EvoOntology 搬家与开源分层】**：官方 workspace 默认是 `<项目根>/.evoontology`，可随项目移动；但 `project.json` 的 `data_source` 必须是**绝对 SQLite 路径**（官方 `workflow.py:244-248` 明确拒绝相对路径），项目换盘或换目录后必须重绑，否则会静默读旧路径。可提交的开源内容只有 `active.json` 与 `versions/*`（`evidence.source` 用逻辑库名 `football_seven_table_sqlite`，不写绝对路径）；`project.json`、`state.json`、`workload/questions.json`、`tasks/`、`trajectories/`、`reports/`、`visualizations/`、`evolution/` 都是本机运行态，不提交。搬家后固定三步：重建 `data/.evo/current.db` 硬链接 → 用官方 `configure_ontology_project(replace=true)` 写新绝对 `data_source` → 以现有问题重建 workload，跑 `validate_semantics` 和真实只读查询探针。
+> **【EvoOntology 边界】**：EvoOntology 是下游只读层，不属于本工位；本工位只交付 `.db` 与可选人类简报，不配置、不校验、不进化本体。Evo 入口与重绑由主会话负责；读契约见 `skills/deep-analysis/SKILL.md`，环境运维见 `skills/deep-analysis/references/evo-environment.md`。
 
 ---
 
@@ -516,9 +514,18 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
 
 ### 2.2 搬运工 Worker 的 Spider 闭环作业规范
 
-1. **两段式闭环**：Worker 接单后 0 秒运行 `py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {销售日} --home {主队} --away {客队} --output <仓库外临时.jsonl>` 导出 JSONL；再按 5.1 建空七表库并执行 ETLX 直接装配 + `GATE_FINAL`，通过后提升 `.db`；不需要先建 MCP 会话；
+1. **两段式闭环**：Worker 接单后 0 秒运行 `py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {销售日} --home {主队} --away {客队} --output <仓库外临时.jsonl>` 导出 JSONL；再按 5.1 建空七表库并执行 ETLX 直接装配 + `GATE_FINAL`，通过后提升 `.db`；不需要先建 MCP 会话；主会话工单模板见 `skills/match-scraper/references/worker-orders.md`。
 2. **选择器与编码**：全部由 `config/endpoints.json` 提供，21 张变盘流水表 `css_selector="#odds2 table"`、两张全景总表 `css_selector="#table_odds"`；Worker 不得手写选择器；
 3. **断路升阶与阻断**：HTTP 失败可用 `--browser-fallback` 升阶 StealthyFetcher；若升阶后仍失败，脚本不写 JSONL、exit 1 并打印具体端点错误，Worker 如实回传，不把失败写成“WAF”或成功。
+
+### 2.3 交付状态与批次纪律
+
+- **启动**：主会话发出工单后推送 `⚡ 已启动…`；不把已启动说成已完成。
+- **过验**：源数据过 `GATE_FINAL` 后推送 `🛡️ 数据已就绪，唤醒分析师…`；未过验不得唤醒。
+- **完成**：整批回传 `.db` 与证据后推送 `✅ …完成` + 摘要；数据异常置顶报警。
+- **单场与多场同一纪律**：单场也必须“搬运工 → 过验 → 分析师”两段隔离，主会话不兼职；多场按 1–3 场分组串行，组批只是物理调度，不是缩减推演总数。
+- **唯一单写者**：Worker 只回传，不写 memory；主会话验收后才写。
+- **调度**：主会话是 Central Scheduler；同一域名单并发、场次互斥、不轮询；最多 3 个单场子代理，子代理不嵌套；Worker 五禁见 `references/worker-orders.md`。
 
 ---
 
@@ -530,6 +537,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
 - **【零磁盘中转垃圾硬铁律】**：绝对严禁在磁盘创建任何 `tmp_*` 暂存文件夹，绝对严禁倾倒任何 `*_1x2.txt`、`*_analy.txt` 等原始中间文件！全流程 100% 内存流式直出落盘！
 - **【Scrapling 原生 Markdown 直转与源头 1:1 镜像流】**：变盘流水页面（21 张大表）强制传 `css_selector="#odds2 table"` 与 `extraction_type="markdown"`，由 Scrapling C/Cython 引擎原地生成纯净 Markdown 表格，内存直取直接拼入人类简报！**绝对严禁自作聪明加任何剪刀与胶水！源头是什么排列，本地简报就是什么排列！严禁手工调换行序，严禁机械截断丢弃变盘记录（严禁 slice(0, 10)、严禁 [:9]+[-1:] 掐头去尾丢弃中间历史）！**
 - **【源头原生态 1:1 镜像保真与时间戳绝对排序律（Source-Fidelity & Timestamp-Sorting Invariant）】**：进货搬运工 100% 原汁原味镜像数据源原生排列，恪守存证保真；推演大脑在分析时，则统一依据每笔记录的物理时间戳进行绝对升序排序（`Sort by Timestamp ASC`），自动按时间数值识别初盘与最新定格盘，彻底破除对源端特定排版方向的刻舟求剑！宏观横向初盘对比由《战区三·五》全权承担，双重硬核保底，彻底杜绝初盘缺失与时序颠倒！
+- **【原值直搬与禁止私自计算（Raw-Value Projection Invariant）】**：最终七表只允许把源字段原值直搬并按业务键关联。**绝对禁止**在业务表使用 `MIN/MAX/COUNT/SUM/AVG`、概率换算、缺失值填充、跨行计算或事后估算；`机构` 中文名、列名翻译和排序只是显示层，不得改变任何数值。统计、比较与推演由 AI 在读取后现场计算，结果不得写回业务表冒充原始数据。
 - **【防 Prompt 注入与减噪强制参数】**：在 CLI 命令流中，必须使用 `--ai-targeted` 参数自动过滤页面隐藏杂质元素与广告，确保 AI 消费级纯净数据直出；在 MCP 调用中通过选择器下推实现等价效果。
 
 ### 3.2 自适应解析拓扑自愈 vs 严禁缓存活水赔率数值
@@ -615,7 +623,7 @@ Feed 以 `$` 分为前后两段：前段是联赛字典（`#` 分隔）；后段
 
 ## 第五工段：模式二·单场【推演源数据】采集与 28 端点装配
 
-底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料经 ETLX 投影后的最终七表 SSOT；27 个端点回执、哈希与采集时间留在抓取层 JSONL，不进入最终库。推演看数强制由 EvoOntology 官方 MCP 视网膜工具链驱动，专供推演大脑在 Mapping 权威路径指引下全量提取结构化字段（严禁跳过 EvoOntology 官方 MCP 视网膜工具链全包裸读 SQLite payload，严禁看 .md）；`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
+底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料经 ETLX 投影后的最终七表 SSOT；27 个端点回执、哈希与采集时间留在抓取层 JSONL，不进入最终库。数据工位只交付 `.db` 与可选人类简报；推演看数规则归 `skills/deep-analysis/SKILL.md`，本工位不配置、不校验 EvoOntology。`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
 
 ### 5.1 Scrapling 官方 API 进货入口：项目适配器 Spider 主路径，MCP 降级
 
@@ -642,11 +650,10 @@ ETLX 成功后直接晋升；**没有 ETLX 之后的 Python 清理，也没有 V
 ```bash
 if [ -f "data/{销售日}/{matchId}.db" ]; then cp "data/{销售日}/{matchId}.db" "data/{销售日}/{matchId}.db.previous"; fi
 cp data/.build/build.db "data/{销售日}/{matchId}.db"
-mkdir -p data/.evo
-rm -f data/.evo/current.db
-cmd.exe /c "mklink /H data\\.evo\\current.db data\\{销售日}\\{matchId}.db"
 rm -rf data/.build
 ```
+
+`data/{销售日}/{matchId}.db` 落盘后，本工位结束；Evo 只读入口由主会话在阶段 1 验收后建立，步骤见 `skills/deep-analysis/references/evo-environment.md`。
 
 外部只读复核至少检查：`sqlite_master` 中只有七张业务表且 0 视图；`球队基本情况` 行数 = 1 + `数据类型` 的阵容/伤停；`欧指`=21；`欧指变盘`、`亚盘变盘`、`大小球变盘` 均非空；`PRAGMA integrity_check=ok`。`球队基本情况` 固定为 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`；行顺序固定为 比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。失败时保留 `data/.build/build.db` 供检查，不动旧最终库。**批量进货只走这条主路径。** JSONL 是仓库外临时交接物，成功后删除。ETLX 若打印 `Error loading .env file` 但 exit 0 且行数正确，属非致命噪声；以 SQLite 只读复核为准，不能只看 ETLX 退出码。
 

@@ -135,7 +135,7 @@ Render all ontology versions as one standalone, offline, single-file interactive
   - 语义导航与防漏：100% 独家归属 `evo-semantic` MCP（5 批次 `resolve_ontology_task` 核销 23 家，遇 gap 强阻断）；
   - 事实全量提取：100% 独家归属推演大脑（在 EvoOntology MCP 坐标锁定下，使用 `execute_ontology_query` 定向提取结构化字段，严禁跳过 EvoOntology 视网膜工具全包裸读 SQLite payload，0 幻觉、0 漏数）；
   - 精算去水与概率：100% 独家归属宿主独立 `sports-math` MCP（`devig_oo_epc` 与 `poisson_dixon_coles`）。
-- **任务轨迹闭环（官方 Task API，强制自动记录）**：每场推演通过底层门禁后，先核对 `.evoontology/project.json` 的 `data_source` 绝对路径与当前 `data/.evo/current.db` 绝对路径一致（项目搬家后若不一致，立即阻断并交总控重绑，绝不在旧路径上推演）；再 `start_ontology_task(question_id="q_match_read_active", version="active", batch_id="{销售日}_{matchId}")` 取得 `task_id`；再调用一次 `browse_semantics` 并用 `record_ontology_task_event` 记录真实结果；5 批次用 `resolve_ontology_task(task_id, mentions=[...])`（每批 ≤5 家，自动记录 `resolve_semantics`）；数据提取只用 `execute_ontology_query(task_id, query, event_id)`（至少 1 条成功原生命令）；最后 `finish_ontology_task(task_id, final_answer=结构化结果, status="completed")`。禁止手写 `.evoontology/trajectories/*.json` 或伪造结果；任务轨迹是 Evolve 的唯一自动食粮。
+- **任务轨迹闭环（官方 Task API，强制自动记录）**：每场推演通过底层门禁后，先核对 `.evoontology/project.json` 的 `data_source` 绝对路径与当前 `data/.evo/current.db` 绝对路径一致（项目搬家后若不一致，立即阻断并交总控按 `references/evo-environment.md` 重绑，绝不在旧路径上推演）；再 `start_ontology_task(question_id="q_match_read_active", version="active", batch_id="{销售日}_{matchId}")` 取得 `task_id`；再调用一次 `browse_semantics` 并用 `record_ontology_task_event` 记录真实结果；5 批次用 `resolve_ontology_task(task_id, mentions=[...])`（每批 ≤5 家，自动记录 `resolve_semantics`）；数据提取只用 `execute_ontology_query(task_id, query, event_id)`（至少 1 条成功原生命令）；最后 `finish_ontology_task(task_id, final_answer=结构化结果, status="completed")`。禁止手写 `.evoontology/trajectories/*.json` 或伪造结果；任务轨迹是 Evolve 的唯一自动食粮。
 - **官方单库与触发器**：`data_source` 只支持单个绝对 SQLite 文件（`data/.evo/current.db` 硬链接），启用 Task 记录后同一时刻只允许一个 Evo task，且硬链接必须指向本场；`finish` 成功后必须调用 `evolution_status`，`evolution_due=true` 只提示“已达进化门禁”，不得自动启动 Evolve 或伪造 Candidate。
 #### 1.5 底层物理存证核验与门禁（Anti-Fabrication & Drop Verification）
 - **最终七表 Schema 强断言**：底层物理文件 `data/{销售日}/{matchId}.db` 必须存在且新鲜（<30分钟）；只能是 7 张表且 0 视图；`球队基本情况` 必须含 `比赛信息` 1 行、`阵容`/`伤停` 真实行；`欧指` 21 行；`欧指变盘` 等于 staging 的 `euro_history` + `eu_detail_history`；`亚盘`/`大小球` 及两张变盘表逐项存在。Polymarket 仅交付链接，不进入分析库、不参与推演。
@@ -367,7 +367,7 @@ Render all ontology versions as one standalone, offline, single-file interactive
 
 ##### 2. 可自愈机制（脱靶自愈、理论矛盾收敛与 Wiki 导览）
 - **脱靶自愈（查询容错）**：若提炼的口语特征查图命中稀疏或无直接概念，禁止放弃；大模型自动执行语义升维（如从口语“早盘跳水”升维至“散户认知偏差”、“净胜球门槛”或直接调用 MCP `god_nodes(top_n=10)` 获取全图核心骨干枢纽），保障武器库有效拔出。
-- **理论矛盾自愈（第一性原理收敛）**：当不同学术理论在当场出现冲突（如欧指理论提示主胜、亚盘理论提示客不败）时，大模型必须调用 MCP 工具 `shortest_path(source="欧亚双盘背离", target="庄家净赔付最小化", undirected=true)` 与矛盾裁决逻辑，严格以庄家“极小化最大损失”第一性原理为准绳裁决：**让球盘防守底线优先于欧指表面宣传口号**，胜、平、负三端逐一写清证据，消除认知分裂。
+- **理论矛盾自愈（第一性原理收敛）**：当不同学术理论在当场出现冲突（如欧指理论提示主胜、亚盘理论提示客不败）时，大模型必须调用 MCP 工具 `shortest_path(source="欧亚双盘背离", target="庄家净赔付最小化", undirected=true)` 与矛盾裁决逻辑，严格以庄家“极小化最大损失”第一性原理为准绳裁决：**让球盘防守底线优先于欧指表面宣传口号**，胜、平、负三端逐一写清证据，消除认知分裂。完整图谱工具契约（含 `get_community` / `get_neighbors`）见 `skills/deep-analysis/references/graphify-tools.md`。
 - **官方 Wiki 社区导览（Wiki Community Navigation）**：推演中若需穿透特定联赛特征或做市商特定流派，分析师可随时检索调阅 `graphify-out/wiki/` 社区维基条目（涵盖 345 篇针对 23 家做市商深度剖析、典型历史战例及学术理论），获得高信噪比实战导览。
 
 ##### 3. 论文主动纠偏与认知校准闭环（五步压力测试）
