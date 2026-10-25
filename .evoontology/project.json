@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "mode": "rolling_trajectory",
-  "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+  "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
   "workload_source": {
     "type": "project_workload"
   },
@@ -13,5 +13,5 @@
   "boundary": {
     "strategy": "rolling_trajectory"
   },
-  "description": "Football match odds deduction perception layer (eyes & camera), rebuilt clean from the seven final SQLite tables."
+  "description": "Football match odds deduction perception layer (eyes & camera), rebuilt from the final seven SQLite tables. The stable data_source is a read-only hardlink to the active match DB, never a fixed match path."
 }

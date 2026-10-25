@@ -8,106 +8,18 @@
     "semantic_filter": "数据类型 = '比赛信息'",
     "table": "球队基本情况",
     "term_id": "term_match",
-    "validation": "read-only value check on 3000504.db"
+    "validation": "one 比赛信息 row with 14 concrete columns on the active match DB"
   },
   {
-    "aggregation_semantics": "one row per bookmaker in the 1X2 table",
-    "column": "机构编号",
+    "aggregation_semantics": "one row per player/lineup slot, ordered by 身份 and 队伍",
+    "column": "姓名",
     "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker",
-    "id": "map_bookmaker",
-    "semantic_filter": "欧指 row; use 机构编号 as the stable cid and 机构 as display name",
-    "table": "欧指",
-    "term_id": "term_bookmaker",
-    "validation": "read-only value check on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "read the three opening and three latest columns from the same 欧指 row",
-    "column": "初盘主胜",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker",
-    "id": "map_euro_odds",
-    "semantic_filter": "same row contains 初盘主胜/初盘平局/初盘客胜/最新主胜/最新平局/最新客胜",
-    "table": "欧指",
-    "term_id": "term_euro_odds",
-    "validation": "read-only value check on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "read the line and both water columns from the same 亚盘 row",
-    "column": "初盘盘口",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker/line sequence",
-    "id": "map_asian_handicap",
-    "semantic_filter": "same row contains 初盘主水/初盘盘口/初盘客水/最新主水/最新盘口/最新客水",
-    "table": "亚盘",
-    "term_id": "term_asian_handicap",
-    "validation": "read-only value check on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "read the line and both water columns from the same 大小球 row",
-    "column": "初盘盘口",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker/line sequence",
-    "id": "map_over_under",
-    "semantic_filter": "same row contains 初盘大球/初盘盘口/初盘小球/最新大球/最新盘口/最新小球",
-    "table": "大小球",
-    "term_id": "term_over_under",
-    "validation": "read-only value check on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "one movement observation per row; sort by 变盘时间",
-    "column": "主胜赔率",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker/timestamp",
-    "id": "map_movement_euro",
-    "semantic_filter": "same row contains 主胜赔率/平局赔率/客胜赔率/变盘时间",
-    "table": "欧指变盘",
-    "term_id": "term_odds_movement",
-    "validation": "read-only timestamp ordering check on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "one movement observation per row; sort by 变盘时间",
-    "column": "主水",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker/timestamp",
-    "id": "map_movement_ah",
-    "semantic_filter": "same row contains 主水/盘口/客水/变盘时间/状态",
-    "table": "亚盘变盘",
-    "term_id": "term_odds_movement",
-    "validation": "read-only timestamp ordering check on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "one movement observation per row; sort by 变盘时间",
-    "column": "大球",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker/timestamp",
-    "id": "map_movement_ou",
-    "semantic_filter": "same row contains 大球/盘口/小球/变盘时间/状态",
-    "table": "大小球变盘",
-    "term_id": "term_odds_movement",
-    "validation": "read-only timestamp ordering check on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "one row per endpoint for the match",
-    "column": "状态",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/endpoint",
-    "id": "map_data_status",
-    "semantic_filter": "数据类型 = '数据状态'; 来源端点 identifies the analysis endpoint",
+    "grain": "match/team/role/player",
+    "id": "map_lineup",
+    "semantic_filter": "数据类型 = '阵容'; 身份 is 首发 or 替补",
     "table": "球队基本情况",
-    "term_id": "term_data_status",
-    "validation": "27 rows / 27 distinct endpoints on 3000504.db"
-  },
-  {
-    "aggregation_semantics": "one row per bookmaker slot for the match",
-    "column": "状态",
-    "database_source": "football_seven_table_sqlite",
-    "grain": "match/bookmaker slot",
-    "id": "map_bookmaker_status",
-    "semantic_filter": "数据类型 = '机构状态'; 机构编号 identifies the slot",
-    "table": "球队基本情况",
-    "term_id": "term_bookmaker_status",
-    "validation": "22 rows on 3000504.db"
+    "term_id": "term_lineup",
+    "validation": "40 lineup rows: 主队/客队 starters and substitutes"
   },
   {
     "aggregation_semantics": "one row per injured player record",
@@ -118,17 +30,83 @@
     "semantic_filter": "数据类型 = '伤停'",
     "table": "球队基本情况",
     "term_id": "term_injury",
-    "validation": "15 injury rows on 3000504.db"
+    "validation": "15 injury rows on the active match DB"
   },
   {
-    "aggregation_semantics": "one row per team statistic item",
-    "column": "数值",
+    "aggregation_semantics": "one row per bookmaker in the 1X2 table",
+    "column": "机构编号",
     "database_source": "football_seven_table_sqlite",
-    "grain": "match/team/metric",
-    "id": "map_team_stats",
-    "semantic_filter": "数据类型 = '技术统计'; 项目 and 指标 identify the metric",
-    "table": "球队基本情况",
-    "term_id": "term_team_stats",
-    "validation": "312 team-statistics rows on 3000504.db"
+    "grain": "match/bookmaker",
+    "id": "map_bookmaker",
+    "semantic_filter": "欧指 row; use 机构编号 as the stable cid and 机构 as display name; the same cid/name identity is used in 亚盘 and 大小球",
+    "table": "欧指",
+    "term_id": "term_bookmaker",
+    "validation": "21 euro bookmaker rows on the active match DB"
+  },
+  {
+    "aggregation_semantics": "read the three opening and three latest columns from the same 欧指 row",
+    "column": "初盘主胜",
+    "database_source": "football_seven_table_sqlite",
+    "grain": "match/bookmaker",
+    "id": "map_euro_odds",
+    "semantic_filter": "same row contains 初盘主胜/初盘平局/初盘客胜/最新主胜/最新平局/最新客胜",
+    "table": "欧指",
+    "term_id": "term_euro_odds",
+    "validation": "read-only value check against the active match DB"
+  },
+  {
+    "aggregation_semantics": "one movement observation per row; sort by 变盘时间",
+    "column": "主胜赔率",
+    "database_source": "football_seven_table_sqlite",
+    "grain": "match/bookmaker/timestamp",
+    "id": "map_euro_movement",
+    "semantic_filter": "same row contains 主胜赔率/平局赔率/客胜赔率/变盘时间",
+    "table": "欧指变盘",
+    "term_id": "term_odds_movement",
+    "validation": "read-only timestamp ordering check against the active match DB"
+  },
+  {
+    "aggregation_semantics": "read the line and both water columns from the same 亚盘 row",
+    "column": "初盘盘口",
+    "database_source": "football_seven_table_sqlite",
+    "grain": "match/bookmaker/line sequence",
+    "id": "map_asian_handicap",
+    "semantic_filter": "same row contains 初盘主水/初盘盘口/初盘客水/最新主水/最新盘口/最新客水; 机构编号 + 初盘盘口 distinguishes alternative lines",
+    "table": "亚盘",
+    "term_id": "term_asian_handicap",
+    "validation": "read-only value check against the active match DB"
+  },
+  {
+    "aggregation_semantics": "one movement observation per row; sort by 变盘时间",
+    "column": "主水",
+    "database_source": "football_seven_table_sqlite",
+    "grain": "match/bookmaker/timestamp",
+    "id": "map_ah_movement",
+    "semantic_filter": "same row contains 主水/盘口/客水/变盘时间/状态",
+    "table": "亚盘变盘",
+    "term_id": "term_odds_movement",
+    "validation": "read-only timestamp ordering check against the active match DB"
+  },
+  {
+    "aggregation_semantics": "read the line and both water columns from the same 大小球 row",
+    "column": "初盘盘口",
+    "database_source": "football_seven_table_sqlite",
+    "grain": "match/bookmaker/line sequence",
+    "id": "map_over_under",
+    "semantic_filter": "same row contains 初盘大球/初盘盘口/初盘小球/最新大球/最新盘口/最新小球; 机构编号 + 初盘盘口 distinguishes alternative lines",
+    "table": "大小球",
+    "term_id": "term_over_under",
+    "validation": "read-only value check against the active match DB"
+  },
+  {
+    "aggregation_semantics": "one movement observation per row; sort by 变盘时间",
+    "column": "大球",
+    "database_source": "football_seven_table_sqlite",
+    "grain": "match/bookmaker/timestamp",
+    "id": "map_ou_movement",
+    "semantic_filter": "same row contains 大球/盘口/小球/变盘时间/状态",
+    "table": "大小球变盘",
+    "term_id": "term_odds_movement",
+    "validation": "read-only timestamp ordering check against the active match DB"
   }
 ]

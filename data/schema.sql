@@ -23,7 +23,6 @@ CREATE TABLE "欧指" (
   "比赛ID" TEXT NOT NULL,
   "机构编号" INTEGER NOT NULL,
   "机构" TEXT NOT NULL,
-  "机构顺序" INTEGER NOT NULL,
   "初盘主胜" REAL NOT NULL,
   "初盘平局" REAL NOT NULL,
   "初盘客胜" REAL NOT NULL,
@@ -40,8 +39,6 @@ CREATE TABLE "欧指变盘" (
   "比赛ID" TEXT NOT NULL,
   "机构编号" INTEGER NOT NULL,
   "机构" TEXT NOT NULL,
-  "机构顺序" INTEGER NOT NULL,
-  "源序号" INTEGER NOT NULL,
   "变盘时间" TEXT NOT NULL,
   "主胜赔率" REAL NOT NULL,
   "平局赔率" REAL NOT NULL,
@@ -50,16 +47,13 @@ CREATE TABLE "欧指变盘" (
   "凯利平局" REAL NOT NULL,
   "凯利客胜" REAL NOT NULL,
   "来源端点" TEXT NOT NULL,
-  PRIMARY KEY ("比赛ID", "机构编号", "变盘时间", "主胜赔率", "平局赔率", "客胜赔率", "来源端点", "源序号")
+  PRIMARY KEY ("比赛ID", "机构编号", "变盘时间", "主胜赔率", "平局赔率", "客胜赔率", "来源端点")
 ) STRICT;
 
 CREATE TABLE "亚盘" (
   "比赛ID" TEXT NOT NULL,
   "机构编号" INTEGER NOT NULL,
   "机构" TEXT NOT NULL,
-  "机构顺序" INTEGER NOT NULL,
-  "盘口序号" INTEGER NOT NULL,
-  "源序号" INTEGER NOT NULL,
   "初盘主水" REAL NOT NULL,
   "初盘盘口" REAL,
   "初盘客水" REAL NOT NULL,
@@ -67,30 +61,25 @@ CREATE TABLE "亚盘" (
   "最新盘口" REAL,
   "最新客水" REAL NOT NULL,
   "更新时间" TEXT NOT NULL,
-  PRIMARY KEY ("比赛ID", "机构编号", "盘口序号")
+  PRIMARY KEY ("比赛ID", "机构编号", "初盘盘口")
 ) STRICT;
 
 CREATE TABLE "亚盘变盘" (
   "比赛ID" TEXT NOT NULL,
   "机构编号" INTEGER NOT NULL,
   "机构" TEXT NOT NULL,
-  "机构顺序" INTEGER NOT NULL,
-  "源序号" INTEGER NOT NULL,
   "状态" TEXT NOT NULL,
   "变盘时间" TEXT NOT NULL,
   "主水" REAL NOT NULL,
   "盘口" TEXT,
   "客水" REAL NOT NULL,
-  PRIMARY KEY ("比赛ID", "机构编号", "变盘时间", "主水", "盘口", "客水", "源序号")
+  PRIMARY KEY ("比赛ID", "机构编号", "变盘时间", "主水", "盘口", "客水")
 ) STRICT;
 
 CREATE TABLE "大小球" (
   "比赛ID" TEXT NOT NULL,
   "机构编号" INTEGER NOT NULL,
   "机构" TEXT NOT NULL,
-  "机构顺序" INTEGER NOT NULL,
-  "盘口序号" INTEGER NOT NULL,
-  "源序号" INTEGER NOT NULL,
   "初盘大球" REAL NOT NULL,
   "初盘盘口" REAL,
   "初盘小球" REAL NOT NULL,
@@ -98,19 +87,17 @@ CREATE TABLE "大小球" (
   "最新盘口" REAL,
   "最新小球" REAL NOT NULL,
   "更新时间" TEXT NOT NULL,
-  PRIMARY KEY ("比赛ID", "机构编号", "盘口序号")
+  PRIMARY KEY ("比赛ID", "机构编号", "初盘盘口")
 ) STRICT;
 
 CREATE TABLE "大小球变盘" (
   "比赛ID" TEXT NOT NULL,
   "机构编号" INTEGER NOT NULL,
   "机构" TEXT NOT NULL,
-  "机构顺序" INTEGER NOT NULL,
-  "源序号" INTEGER NOT NULL,
   "状态" TEXT NOT NULL,
   "变盘时间" TEXT NOT NULL,
   "大球" REAL NOT NULL,
   "盘口" TEXT,
   "小球" REAL NOT NULL,
-  PRIMARY KEY ("比赛ID", "机构编号", "变盘时间", "大球", "盘口", "小球", "源序号")
+  PRIMARY KEY ("比赛ID", "机构编号", "变盘时间", "大球", "盘口", "小球")
 ) STRICT;

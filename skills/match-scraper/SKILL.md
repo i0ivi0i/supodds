@@ -18,7 +18,11 @@ metadata:
 
 # 赛程与推演源数据采集（match-scraper）· 马斯克超级工厂工位 1
 
-> **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用基于 Scrapling 官方 API 的项目适配器 `ingest_spider.py` 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。`{matchId}.md` 仅为可选人类看板。
+> **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用基于 Scrapling 官方 API 的项目适配器 `ingest_spider.py` 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。EvoOntology 只读入口固定为 `data/.evo/current.db`，它是指向当前场次库的 NTFS 硬链接，不是副本、不是第二个库。`{matchId}.md` 仅为可选人类看板。
+>
+> **【DB 微调与 EvoOntology 失效边界】**：在七表名与列名不变的前提下，重写当前 `.db` 后重建硬链接，EvoOntology 的下一次只读查询会读到新数据；官方每次执行查询都新建 SQLite 只读连接，不缓存数据值。若 `ALTER`/`DROP`/`RENAME` 七表或列名，必须同步更新 `.evoontology` 的 Mapping 与 Evidence，再跑 `validate_semantics` 和真实查询探针；官方 `validate_semantics` 只校验本体结构，不校验底层表列是否存在。
+>
+> **【EvoOntology 搬家与开源分层】**：官方 workspace 默认是 `<项目根>/.evoontology`，可随项目移动；但 `project.json` 的 `data_source` 必须是**绝对 SQLite 路径**（官方 `workflow.py:244-248` 明确拒绝相对路径），项目换盘或换目录后必须重绑，否则会静默读旧路径。可提交的开源内容只有 `active.json` 与 `versions/*`（`evidence.source` 用逻辑库名 `football_seven_table_sqlite`，不写绝对路径）；`project.json`、`state.json`、`workload/questions.json`、`tasks/`、`trajectories/`、`reports/`、`visualizations/`、`evolution/` 都是本机运行态，不提交。搬家后固定三步：重建 `data/.evo/current.db` 硬链接 → 用官方 `configure_ontology_project(replace=true)` 写新绝对 `data_source` → 以现有问题重建 workload，跑 `validate_semantics` 和真实只读查询探针。
 
 ---
 
@@ -638,6 +642,9 @@ ETLX 成功后直接晋升；**没有 ETLX 之后的 Python 清理，也没有 V
 ```bash
 if [ -f "data/{销售日}/{matchId}.db" ]; then cp "data/{销售日}/{matchId}.db" "data/{销售日}/{matchId}.db.previous"; fi
 cp data/.build/build.db "data/{销售日}/{matchId}.db"
+mkdir -p data/.evo
+rm -f data/.evo/current.db
+cmd.exe /c "mklink /H data\\.evo\\current.db data\\{销售日}\\{matchId}.db"
 rm -rf data/.build
 ```
 

@@ -1,10 +1,10 @@
 {
   "questions": [
     {
-      "id": "q_v0_integrity",
-      "question": "Verify a match database has exactly seven final tables, 27 data-status rows, 22 bookmaker-status slots, and explicit not_offered states without fabricated values.",
+      "id": "q_v0_lineup_injury",
+      "question": "Read a match's starting lineups, substitutes, and injury records with team, player, shirt number, position, and medical reason when present.",
       "origin": "user",
-      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
       "provenance": [
         {
           "origin": "user",
@@ -13,19 +13,18 @@
         }
       ],
       "topics": [
-        "data_status",
-        "bookmaker_status",
-        "integrity",
+        "lineup",
+        "injury",
         "sqlite"
       ],
-      "recorded_at": "2026-10-25T08:19:21.180151+00:00",
+      "recorded_at": "2026-10-25T11:00:36.687620+00:00",
       "purpose": "construction"
     },
     {
       "id": "q_v0_ah_ou_read",
-      "question": "Read a match's Asian handicap and over/under opening and latest lines from the seven-table SQLite database, including bookmaker identity and full movement history.",
+      "question": "Read a match's Asian handicap and over/under opening and latest lines from the seven-table SQLite database, including bookmaker identity, alternative lines, and full timestamped movement history.",
       "origin": "user",
-      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
       "provenance": [
         {
           "origin": "user",
@@ -39,14 +38,14 @@
         "movement",
         "sqlite"
       ],
-      "recorded_at": "2026-10-25T08:19:21.180133+00:00",
+      "recorded_at": "2026-10-25T11:00:36.687605+00:00",
       "purpose": "construction"
     },
     {
       "id": "q_v0_euro_read",
-      "question": "Read a match's 1X2 opening and latest odds from the seven-table SQLite database, including bookmaker identity and timestamps for its movement history.",
+      "question": "Read a match's 1X2 opening and latest odds from the seven-table SQLite database, including bookmaker cid/name and the full timestamped movement history.",
       "origin": "user",
-      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
       "provenance": [
         {
           "origin": "user",
@@ -60,9 +59,61 @@
         "movement",
         "sqlite"
       ],
-      "recorded_at": "2026-10-25T08:19:21.180053+00:00",
+      "recorded_at": "2026-10-25T11:00:36.687587+00:00",
+      "purpose": "construction"
+    },
+    {
+      "id": "q_v0_schema",
+      "question": "Verify a match database has exactly seven final tables, zero views, and a 球队基本情况 table with 14 columns and only 比赛信息, 阵容, and 伤停 rows.",
+      "origin": "user",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
+      "provenance": [
+        {
+          "origin": "user",
+          "source_ref": "current request",
+          "evidence_refs": []
+        },
+        {
+          "origin": "history",
+          "source_ref": "D:\\100-工作\\200-交易\\倍率分析推演\\.evoontology\\trajectories\\task_1004e035eb8a4d0ab90c8591364bd8fa.json",
+          "evidence_refs": [
+            "D:\\100-工作\\200-交易\\倍率分析推演\\.evoontology\\trajectories\\task_1004e035eb8a4d0ab90c8591364bd8fa.json"
+          ]
+        }
+      ],
+      "topics": [
+        "schema",
+        "integrity",
+        "sqlite"
+      ],
+      "recorded_at": "2026-10-25T11:00:36.687507+00:00",
+      "purpose": "construction"
+    },
+    {
+      "id": "q_match_read_active",
+      "question": "Read the active match's final seven-table SQLite database and return all 1X2, Asian handicap, over/under, lineup, injury, and timestamped movement facts required for a full match deduction.",
+      "origin": "user",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
+      "provenance": [
+        {
+          "origin": "user",
+          "source_ref": "current request",
+          "evidence_refs": []
+        }
+      ],
+      "topics": [
+        "match_analysis",
+        "euro_odds",
+        "asian_handicap",
+        "over_under",
+        "lineup",
+        "injury",
+        "movement",
+        "sqlite"
+      ],
+      "recorded_at": "2026-10-25T11:16:43.307058+00:00",
       "purpose": "construction"
     }
   ],
-  "updated_at": "2026-10-25T08:19:21.180238+00:00"
+  "updated_at": "2026-10-25T11:16:43.307198+00:00"
 }

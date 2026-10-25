@@ -854,7 +854,7 @@ ORDER BY
   "sort_index";
 
 INSERT INTO DB."欧指" (
-  "比赛ID", "机构编号", "机构", "机构顺序",
+  "比赛ID", "机构编号", "机构",
   "初盘主胜", "初盘平局", "初盘客胜", "初盘返还率(%)",
   "最新主胜", "最新平局", "最新客胜", "最新返还率(%)", "来源端点"
 )
@@ -870,20 +870,13 @@ SELECT
     WHEN 826 THEN 'Paddy Power' WHEN 16 THEN '10Bet' WHEN 1129 THEN '中国体彩'
     ELSE e.bookmaker
   END,
-  CASE e.cid
-    WHEN 80 THEN 1 WHEN 545 THEN 2 WHEN 281 THEN 3 WHEN 90 THEN 4
-    WHEN 177 THEN 5 WHEN 432 THEN 6 WHEN 115 THEN 7 WHEN 82 THEN 8
-    WHEN 81 THEN 9 WHEN 104 THEN 10 WHEN 255 THEN 11 WHEN 110 THEN 12
-    WHEN 2 THEN 13 WHEN 474 THEN 14 WHEN 649 THEN 15 WHEN 800 THEN 16
-    WHEN 482 THEN 17 WHEN 386 THEN 18 WHEN 826 THEN 19 WHEN 16 THEN 20
-    WHEN 1129 THEN 21 ELSE 99
-  END,
   e.initial_home, e.initial_draw, e.initial_away, e.initial_return,
   e.latest_home, e.latest_draw, e.latest_away, e.latest_return, '1x2d.js'
-FROM euro_snapshot e;
+FROM euro_snapshot e
+ORDER BY e.cid;
 
 INSERT INTO DB."欧指变盘" (
-  "比赛ID", "机构编号", "机构", "机构顺序", "源序号", "变盘时间",
+  "比赛ID", "机构编号", "机构", "变盘时间",
   "主胜赔率", "平局赔率", "客胜赔率", "凯利主胜", "凯利平局", "凯利客胜", "来源端点"
 )
 SELECT
@@ -898,15 +891,7 @@ SELECT
     WHEN 826 THEN 'Paddy Power' WHEN 16 THEN '10Bet' WHEN 1129 THEN '中国体彩'
     ELSE CAST(h.cid AS VARCHAR)
   END,
-  CASE h.cid
-    WHEN 80 THEN 1 WHEN 545 THEN 2 WHEN 281 THEN 3 WHEN 90 THEN 4
-    WHEN 177 THEN 5 WHEN 432 THEN 6 WHEN 115 THEN 7 WHEN 82 THEN 8
-    WHEN 81 THEN 9 WHEN 104 THEN 10 WHEN 255 THEN 11 WHEN 110 THEN 12
-    WHEN 2 THEN 13 WHEN 474 THEN 14 WHEN 649 THEN 15 WHEN 800 THEN 16
-    WHEN 482 THEN 17 WHEN 386 THEN 18 WHEN 826 THEN 19 WHEN 16 THEN 20
-    WHEN 1129 THEN 21 ELSE 99
-  END,
-  h.source_index, h.ts_iso, h.home, h.draw, h.away,
+  h.ts_iso, h.home, h.draw, h.away,
   h.kelly_home, h.kelly_draw, h.kelly_away, '1x2d.js'
 FROM euro_history h
 UNION ALL
@@ -922,62 +907,50 @@ SELECT
     WHEN 826 THEN 'Paddy Power' WHEN 16 THEN '10Bet' WHEN 1129 THEN '中国体彩'
     ELSE CAST(d.company_id AS VARCHAR)
   END,
-  CASE d.company_id
-    WHEN 80 THEN 1 WHEN 545 THEN 2 WHEN 281 THEN 3 WHEN 90 THEN 4
-    WHEN 177 THEN 5 WHEN 432 THEN 6 WHEN 115 THEN 7 WHEN 82 THEN 8
-    WHEN 81 THEN 9 WHEN 104 THEN 10 WHEN 255 THEN 11 WHEN 110 THEN 12
-    WHEN 2 THEN 13 WHEN 474 THEN 14 WHEN 649 THEN 15 WHEN 800 THEN 16
-    WHEN 482 THEN 17 WHEN 386 THEN 18 WHEN 826 THEN 19 WHEN 16 THEN 20
-    WHEN 1129 THEN 21 ELSE 99
-  END,
-  d.source_index, d.ts_iso, d.home, d.draw, d.away,
+  d.ts_iso, d.home, d.draw, d.away,
   d.kelly_home, d.kelly_draw, d.kelly_away, d.endpoint_key
 FROM eu_detail_history d
-ORDER BY 4, 6 ASC, 5 DESC;
+ORDER BY 2, 4 ASC, 11;
 
 INSERT INTO DB."亚盘" (
-  "比赛ID", "机构编号", "机构", "机构顺序", "盘口序号", "源序号",
+  "比赛ID", "机构编号", "机构",
   "初盘主水", "初盘盘口", "初盘客水", "最新主水", "最新盘口", "最新客水", "更新时间"
 )
 SELECT
   a.match_id, a.company_id, a.bookmaker,
-  CASE a.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
-  a.odds_id, a.odds_id,
   a.first_home, a.first_line, a.first_away, a.home, a.line, a.away, a.modify_iso
-FROM asian_odds a;
+FROM asian_odds a
+ORDER BY a.company_id, a.first_line;
 
 INSERT INTO DB."亚盘变盘" (
-  "比赛ID", "机构编号", "机构", "机构顺序", "源序号", "状态", "变盘时间", "主水", "盘口", "客水"
+  "比赛ID", "机构编号", "机构", "状态", "变盘时间", "主水", "盘口", "客水"
 )
 SELECT
   h.match_id, h.company_id,
   CASE h.company_id WHEN 1 THEN '澳彩' WHEN 3 THEN '皇冠' WHEN 8 THEN 'Bet365' WHEN 12 THEN '易胜博' WHEN 42 THEN '188Bet' WHEN 47 THEN '平博' WHEN 48 THEN '香港马会' ELSE CAST(h.company_id AS VARCHAR) END,
-  CASE h.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
-  h.source_index, h.status, h.ts_iso, h.home, h.line_text, h.away
+  h.status, h.ts_iso, h.home, h.line_text, h.away
 FROM ah_history h
-ORDER BY 4, 7 ASC, 5 DESC;
+ORDER BY 2, 5 ASC;
 
 INSERT INTO DB."大小球" (
-  "比赛ID", "机构编号", "机构", "机构顺序", "盘口序号", "源序号",
+  "比赛ID", "机构编号", "机构",
   "初盘大球", "初盘盘口", "初盘小球", "最新大球", "最新盘口", "最新小球", "更新时间"
 )
 SELECT
   o.match_id, o.company_id, o.bookmaker,
-  CASE o.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
-  o.odds_id, o.odds_id,
   o.first_over, o.first_line, o.first_under, o."over", o.line, o."under", o.modify_iso
-FROM over_under o;
+FROM over_under o
+ORDER BY o.company_id, o.first_line;
 
 INSERT INTO DB."大小球变盘" (
-  "比赛ID", "机构编号", "机构", "机构顺序", "源序号", "状态", "变盘时间", "大球", "盘口", "小球"
+  "比赛ID", "机构编号", "机构", "状态", "变盘时间", "大球", "盘口", "小球"
 )
 SELECT
   h.match_id, h.company_id,
   CASE h.company_id WHEN 1 THEN '澳彩' WHEN 3 THEN '皇冠' WHEN 8 THEN 'Bet365' WHEN 12 THEN '易胜博' WHEN 42 THEN '188Bet' WHEN 47 THEN '平博' WHEN 48 THEN '香港马会' ELSE CAST(h.company_id AS VARCHAR) END,
-  CASE h.company_id WHEN 1 THEN 1 WHEN 3 THEN 2 WHEN 8 THEN 3 WHEN 12 THEN 4 WHEN 42 THEN 5 WHEN 47 THEN 6 WHEN 48 THEN 7 ELSE 99 END,
-  h.source_index, h.status, h.ts_iso, h."over", h.line_text, h."under"
+  h.status, h.ts_iso, h."over", h.line_text, h."under"
 FROM ou_history h
-ORDER BY 4, 7 ASC, 5 DESC;
+ORDER BY 2, 5 ASC;
 ```
 
 # GATE_FINAL

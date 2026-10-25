@@ -1,19 +1,35 @@
 {
-  "summary": "Clean V0 rebuild from the current seven-table SQLite database. It contains 10 terms, 12 mappings, 13 relations, 7 constraints, and 7 evidence records covering 1X2 odds, Asian handicap, over/under, timestamped movement, endpoint status, bookmaker-slot status, injuries, and team statistics. It contains no old views, raw JSON, Markdown evidence, or legacy case conclusions.",
+  "summary": "Schema-aligned V0 migration from the current seven-table SQLite database. It contains 8 terms, 10 mappings, 11 relations, 5 constraints, and 7 evidence records covering match identity, lineups, injuries, bookmakers, 1X2 odds, Asian handicap, over/under, and timestamped movement. The data source is a stable hardlink to the active match DB, not a fixed match path. It contains no old status/statistics objects, views, raw JSON, Markdown evidence, or legacy case conclusions.",
   "limitations": [
-    "Built from one seed match database, 3000504.db; this is not evidence of coverage across all leagues or match types.",
-    "The database has 22 bookmaker status slots but 21 distinct 机构编号 because 188Bet uses the change-detail 42 slot pattern; Polymarket is delivery-only and is not a database bookmaker row.",
-    "This is an initial ontology_v0 build, not an officially evaluated evolution candidate and not a 30-trajectory evolution result.",
-    "Lineup formation is not modeled as a separate term in V0; injury and team-statistics records are modeled. Missing values remain explicit gaps."
+    "Built from one seed match database, 3000504.db, read through the stable current-match hardlink; this is not evidence of coverage across all leagues or match types.",
+    "The stable data_source is data/.evo/current.db. It is a hardlink, not a second database; it must point at the active match DB before each read-only task. The physical match SSOT remains data/{sales_date}/{matchId}.db.",
+    "This is a schema-aligned V0 migration snapshot, not an officially evaluated evolution candidate and not a 30-trajectory evolution result.",
+    "The final database has no 数据状态, 机构状态, or 技术统计 rows; those old semantic objects and their constraints were removed.",
+    "Alternative Asian handicap and over/under lines are distinguished by 机构编号 + 初盘盘口; there is no stored source oddsId in the final tables."
   ],
   "links": [
     {
       "object_ids": [
+        "term_match",
+        "constraint_seven_tables_only",
+        "constraint_team_info_shape",
+        "map_match",
+        "map_lineup",
+        "map_injury"
+      ],
+      "question_id": "q_v0_schema"
+    },
+    {
+      "object_ids": [
         "term_euro_odds",
-        "term_odds_movement",
         "term_bookmaker",
+        "term_odds_movement",
         "map_euro_odds",
-        "map_movement_euro"
+        "map_euro_movement",
+        "rel_euro_bookmaker",
+        "rel_euro_movement",
+        "constraint_euro_cids",
+        "constraint_timestamp_order"
       ],
       "question_id": "q_v0_euro_read"
     },
@@ -21,32 +37,38 @@
       "object_ids": [
         "term_asian_handicap",
         "term_over_under",
+        "term_bookmaker",
         "term_odds_movement",
         "map_asian_handicap",
+        "map_ah_movement",
         "map_over_under",
-        "map_movement_ah",
-        "map_movement_ou"
+        "map_ou_movement",
+        "rel_ah_bookmaker",
+        "rel_ou_bookmaker",
+        "rel_ah_movement",
+        "rel_ou_movement",
+        "constraint_timestamp_order"
       ],
       "question_id": "q_v0_ah_ou_read"
     },
     {
       "object_ids": [
-        "term_data_status",
-        "term_bookmaker_status",
-        "constraint_27_endpoints",
-        "constraint_bookmaker_slots",
-        "constraint_empty_state",
-        "constraint_seven_tables_only"
+        "term_lineup",
+        "term_injury",
+        "map_lineup",
+        "map_injury",
+        "rel_match_lineup",
+        "rel_match_injury"
       ],
-      "question_id": "q_v0_integrity"
+      "question_id": "q_v0_lineup_injury"
     }
   ],
   "questions": [
     {
-      "id": "q_v0_integrity",
-      "question": "Verify a match database has exactly seven final tables, 27 data-status rows, 22 bookmaker-status slots, and explicit not_offered states without fabricated values.",
+      "id": "q_v0_lineup_injury",
+      "question": "Read a match's starting lineups, substitutes, and injury records with team, player, shirt number, position, and medical reason when present.",
       "origin": "user",
-      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
       "provenance": [
         {
           "origin": "user",
@@ -55,19 +77,18 @@
         }
       ],
       "topics": [
-        "data_status",
-        "bookmaker_status",
-        "integrity",
+        "lineup",
+        "injury",
         "sqlite"
       ],
-      "recorded_at": "2026-10-25T08:19:21.180151+00:00",
+      "recorded_at": "2026-10-25T11:00:36.687620+00:00",
       "purpose": "construction"
     },
     {
       "id": "q_v0_ah_ou_read",
-      "question": "Read a match's Asian handicap and over/under opening and latest lines from the seven-table SQLite database, including bookmaker identity and full movement history.",
+      "question": "Read a match's Asian handicap and over/under opening and latest lines from the seven-table SQLite database, including bookmaker identity, alternative lines, and full timestamped movement history.",
       "origin": "user",
-      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
       "provenance": [
         {
           "origin": "user",
@@ -81,14 +102,14 @@
         "movement",
         "sqlite"
       ],
-      "recorded_at": "2026-10-25T08:19:21.180133+00:00",
+      "recorded_at": "2026-10-25T11:00:36.687605+00:00",
       "purpose": "construction"
     },
     {
       "id": "q_v0_euro_read",
-      "question": "Read a match's 1X2 opening and latest odds from the seven-table SQLite database, including bookmaker identity and timestamps for its movement history.",
+      "question": "Read a match's 1X2 opening and latest odds from the seven-table SQLite database, including bookmaker cid/name and the full timestamped movement history.",
       "origin": "user",
-      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
       "provenance": [
         {
           "origin": "user",
@@ -102,10 +123,30 @@
         "movement",
         "sqlite"
       ],
-      "recorded_at": "2026-10-25T08:19:21.180053+00:00",
+      "recorded_at": "2026-10-25T11:00:36.687587+00:00",
+      "purpose": "construction"
+    },
+    {
+      "id": "q_v0_schema",
+      "question": "Verify a match database has exactly seven final tables, zero views, and a 球队基本情况 table with 14 columns and only 比赛信息, 阵容, and 伤停 rows.",
+      "origin": "user",
+      "data_source": "D:/100-工作/200-交易/倍率分析推演/data/.evo/current.db",
+      "provenance": [
+        {
+          "origin": "user",
+          "source_ref": "current request",
+          "evidence_refs": []
+        }
+      ],
+      "topics": [
+        "schema",
+        "integrity",
+        "sqlite"
+      ],
+      "recorded_at": "2026-10-25T11:00:36.687507+00:00",
       "purpose": "construction"
     }
   ],
-  "recorded_at": "2026-10-25T08:20:44.635460+00:00",
+  "recorded_at": "2026-10-25T11:00:41.393838+00:00",
   "version": "ontology_v0"
 }

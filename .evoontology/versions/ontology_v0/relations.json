@@ -33,39 +33,6 @@
     "target": "term_bookmaker"
   },
   {
-    "connection_condition": "movement rows share match and 机构编号 with the 欧指 row",
-    "description": "1X2 movement is derived from successive 1X2 snapshots and must be read in timestamp order.",
-    "evidence": [
-      "ev_v0_movement_bounds"
-    ],
-    "id": "rel_euro_movement",
-    "relation_type": "derivation",
-    "source": "term_euro_odds",
-    "target": "term_odds_movement"
-  },
-  {
-    "connection_condition": "movement rows share match and 机构编号 with the 亚盘 row",
-    "description": "Asian handicap movement is derived from successive line/water snapshots and must be read in timestamp order.",
-    "evidence": [
-      "ev_v0_movement_bounds"
-    ],
-    "id": "rel_ah_movement",
-    "relation_type": "derivation",
-    "source": "term_asian_handicap",
-    "target": "term_odds_movement"
-  },
-  {
-    "connection_condition": "movement rows share match and 机构编号 with the 大小球 row",
-    "description": "Over/under movement is derived from successive line/water snapshots and must be read in timestamp order.",
-    "evidence": [
-      "ev_v0_movement_bounds"
-    ],
-    "id": "rel_ou_movement",
-    "relation_type": "derivation",
-    "source": "term_over_under",
-    "target": "term_odds_movement"
-  },
-  {
     "connection_condition": "same 比赛ID in 球队基本情况 and 欧指",
     "description": "A match exposes 1X2 odds through its 欧指 rows.",
     "evidence": [
@@ -100,9 +67,20 @@
   },
   {
     "connection_condition": "same 比赛ID and team identity in 球队基本情况",
+    "description": "A match has starting and substitute lineup rows.",
+    "evidence": [
+      "ev_v0_team_info_shape"
+    ],
+    "id": "rel_match_lineup",
+    "relation_type": "association",
+    "source": "term_match",
+    "target": "term_lineup"
+  },
+  {
+    "connection_condition": "same 比赛ID and team identity in 球队基本情况",
     "description": "A match has injury records for its teams.",
     "evidence": [
-      "ev_v0_row_counts"
+      "ev_v0_team_info_shape"
     ],
     "id": "rel_match_injury",
     "relation_type": "association",
@@ -110,36 +88,36 @@
     "target": "term_injury"
   },
   {
-    "connection_condition": "same 比赛ID and team identity in 球队基本情况",
-    "description": "A match has team statistics records.",
+    "connection_condition": "movement rows share match and 机构编号 with the 欧指 row",
+    "description": "1X2 movement is derived from successive 1X2 snapshots and must be read in timestamp order.",
     "evidence": [
-      "ev_v0_row_counts"
+      "ev_v0_movement_bounds"
     ],
-    "id": "rel_match_stats",
-    "relation_type": "association",
-    "source": "term_match",
-    "target": "term_team_stats"
+    "id": "rel_euro_movement",
+    "relation_type": "derivation",
+    "source": "term_euro_odds",
+    "target": "term_odds_movement"
   },
   {
-    "connection_condition": "same 比赛ID in 球队基本情况 status rows",
-    "description": "A match's data-status rows report capture completeness.",
+    "connection_condition": "movement rows share match and 机构编号 with the 亚盘 row",
+    "description": "Asian handicap movement is derived from successive line/water snapshots and must be read in timestamp order.",
     "evidence": [
-      "ev_v0_status_counts"
+      "ev_v0_movement_bounds"
     ],
-    "id": "rel_match_data_status",
-    "relation_type": "association",
-    "source": "term_match",
-    "target": "term_data_status"
+    "id": "rel_ah_movement",
+    "relation_type": "derivation",
+    "source": "term_asian_handicap",
+    "target": "term_odds_movement"
   },
   {
-    "connection_condition": "same 比赛ID in 球队基本情况 status rows",
-    "description": "A match's bookmaker-status slots report market coverage.",
+    "connection_condition": "movement rows share match and 机构编号 with the 大小球 row",
+    "description": "Over/under movement is derived from successive line/water snapshots and must be read in timestamp order.",
     "evidence": [
-      "ev_v0_status_counts"
+      "ev_v0_movement_bounds"
     ],
-    "id": "rel_match_bookmaker_status",
-    "relation_type": "association",
-    "source": "term_match",
-    "target": "term_bookmaker_status"
+    "id": "rel_ou_movement",
+    "relation_type": "derivation",
+    "source": "term_over_under",
+    "target": "term_odds_movement"
   }
 ]

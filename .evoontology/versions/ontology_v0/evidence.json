@@ -3,56 +3,56 @@
     "id": "ev_v0_seven_tables",
     "query": "SELECT type, name FROM sqlite_master WHERE type IN ('table','view') ORDER BY type, name;",
     "result": "7 tables, 0 views: 亚盘, 亚盘变盘, 大小球, 大小球变盘, 欧指, 欧指变盘, 球队基本情况.",
-    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
-    "timestamp": "2026-10-25T08:20:00Z",
-    "validation_method": "read-only SQLite schema inspection"
+    "source": "football_seven_table_sqlite",
+    "timestamp": "2026-10-25T10:57:00Z",
+    "validation_method": "read-only SQLite schema inspection through the stable current-match hardlink"
   },
   {
     "id": "ev_v0_row_counts",
     "query": "SELECT COUNT(*) FROM each of the seven final tables;",
-    "result": "球队基本情况=417, 欧指=21, 欧指变盘=345, 亚盘=22, 亚盘变盘=162, 大小球=24, 大小球变盘=116.",
-    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
-    "timestamp": "2026-10-25T08:20:00Z",
+    "result": "球队基本情况=56, 欧指=21, 欧指变盘=345, 亚盘=22, 亚盘变盘=162, 大小球=24, 大小球变盘=116.",
+    "source": "football_seven_table_sqlite",
+    "timestamp": "2026-10-25T10:57:00Z",
     "validation_method": "read-only SQLite row-count inspection"
   },
   {
-    "id": "ev_v0_status_counts",
-    "query": "SELECT COUNT(*) AS rows, COUNT(DISTINCT 来源端点) AS endpoints FROM 球队基本情况 WHERE 数据类型='数据状态'; SELECT COUNT(*) AS rows, COUNT(DISTINCT 机构编号) AS bookmakers FROM 球队基本情况 WHERE 数据类型='机构状态';",
-    "result": "数据状态: 27 rows, 27 distinct endpoints. 机构状态: 22 rows, 21 distinct 机构编号 (188Bet shares the change-detail 42 slot pattern).",
-    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
-    "timestamp": "2026-10-25T08:20:00Z",
-    "validation_method": "read-only SQLite status inspection"
+    "id": "ev_v0_team_info_shape",
+    "query": "PRAGMA table_info('球队基本情况'); SELECT 数据类型, COUNT(*) FROM 球队基本情况 GROUP BY 数据类型;",
+    "result": "14 columns: 比赛ID, 数据类型, 联赛, 主队, 客队, 开球时间, 竞彩编号, 销售日, 队伍, 身份, 号码, 姓名, 位置, 伤停原因. Rows: 比赛信息=1, 阵容=40, 伤停=15; total=56.",
+    "source": "football_seven_table_sqlite",
+    "timestamp": "2026-10-25T10:57:00Z",
+    "validation_method": "read-only SQLite column and type inspection"
   },
   {
     "id": "ev_v0_euro_sample",
-    "query": "SELECT 机构编号,机构,初盘主胜,初盘平局,初盘客胜,最新主胜,最新平局,最新客胜 FROM 欧指 WHERE 机构编号 IN (80,545,281,177,432) ORDER BY 机构顺序;",
-    "result": "澳彩 80: 1.23/5.15/8.90 -> 1.27/5.00/8.20; 皇冠 545: 1.34/5.20/8.90 -> 1.35/5.10/8.50; Bet365 281: 1.30/4.75/10.00 -> 1.30/5.00/11.00; 平博 177: 1.29/5.43/9.15 -> 1.32/5.53/10.22; 香港马会 432: 1.23/4.95/8.25 -> 1.23/4.90/8.50.",
-    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
-    "timestamp": "2026-10-25T08:20:00Z",
+    "query": "SELECT 机构编号,机构,初盘主胜,初盘平局,初盘客胜,最新主胜,最新平局,最新客胜 FROM 欧指 WHERE 机构编号 IN (80,545,281,177,432) ORDER BY 机构编号;",
+    "result": "澳彩 80: 1.23/5.15/8.90 -> 1.27/5.00/8.20; 平博 177: 1.29/5.43/9.15 -> 1.32/5.53/10.22; Bet365 281: 1.30/4.75/10.00 -> 1.30/5.00/11.00; 香港马会 432: 1.23/4.95/8.25 -> 1.23/4.90/8.50; 皇冠 545: 1.34/5.20/8.90 -> 1.35/5.10/8.50.",
+    "source": "football_seven_table_sqlite",
+    "timestamp": "2026-10-25T10:57:00Z",
     "validation_method": "read-only SQLite value inspection"
   },
   {
     "id": "ev_v0_ah_ou_sample",
-    "query": "SELECT 机构编号,机构,盘口序号,初盘主水,初盘盘口,初盘客水,最新主水,最新盘口,最新客水 FROM 亚盘 ORDER BY 机构顺序,盘口序号 LIMIT 5; SELECT 机构编号,机构,盘口序号,初盘大球,初盘盘口,初盘小球,最新大球,最新盘口,最新小球 FROM 大小球 ORDER BY 机构顺序,盘口序号 LIMIT 5;",
-    "result": "亚盘 澳彩 1: 0.99/1.50/0.85 -> 1.04/1.50/0.80; 皇冠 3: 1.00/1.50/0.88 -> 1.04/1.50/0.85. 大小球 澳彩 1: 0.92/2.75/0.88 -> 0.92/2.75/0.88; 皇冠 3: 0.95/2.75/0.92 -> 0.98/2.75/0.90.",
-    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
-    "timestamp": "2026-10-25T08:20:00Z",
+    "query": "SELECT 机构编号,机构,初盘主水,初盘盘口,初盘客水,最新主水,最新盘口,最新客水 FROM 亚盘 ORDER BY 机构编号,初盘盘口 LIMIT 6; SELECT 机构编号,机构,初盘大球,初盘盘口,初盘小球,最新大球,最新盘口,最新小球 FROM 大小球 ORDER BY 机构编号,初盘盘口 LIMIT 6;",
+    "result": "亚盘 澳彩 1: 0.74/1.25/1.10 -> 0.82/1.25/1.02; 澳彩 1: 0.99/1.50/0.85 -> 1.04/1.50/0.80; 皇冠 3: 0.48/1.00/1.69 -> 0.52/1.00/1.58. 大小球 澳彩 1: 0.70/2.50/1.10 -> 0.70/2.50/1.10; 澳彩 1: 0.92/2.75/0.88 -> 0.92/2.75/0.88; 皇冠 3: 0.73/2.50/1.16 -> 0.78/2.50/1.11.",
+    "source": "football_seven_table_sqlite",
+    "timestamp": "2026-10-25T10:57:00Z",
     "validation_method": "read-only SQLite value inspection"
   },
   {
     "id": "ev_v0_movement_bounds",
     "query": "SELECT MIN(变盘时间), MAX(变盘时间), COUNT(*) FROM each movement table;",
     "result": "欧指变盘: 2026-10-20 15:37 to 2026-10-25 14:00, 345 rows; 亚盘变盘: 2026-10-21 18:13 to 2026-10-25 14:00, 162 rows; 大小球变盘: 2026-10-21 18:13 to 2026-10-25 14:00, 116 rows.",
-    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
-    "timestamp": "2026-10-25T08:20:00Z",
+    "source": "football_seven_table_sqlite",
+    "timestamp": "2026-10-25T10:57:00Z",
     "validation_method": "read-only SQLite timestamp-range inspection"
   },
   {
     "id": "ev_v0_integrity",
     "query": "PRAGMA integrity_check; SELECT COUNT(*) FROM 球队基本情况;",
-    "result": "integrity_check=ok; 球队基本情况=417 rows.",
-    "source": "D:/100-工作/200-交易/倍率分析推演/data/2026-10-25/3000504.db",
-    "timestamp": "2026-10-25T08:20:00Z",
+    "result": "integrity_check=ok; 球队基本情况=56 rows.",
+    "source": "football_seven_table_sqlite",
+    "timestamp": "2026-10-25T10:57:00Z",
     "validation_method": "read-only SQLite integrity inspection"
   }
 ]

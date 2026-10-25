@@ -87,16 +87,16 @@ class PipelineContractTest(unittest.TestCase):
         block = self.text.split('INSERT INTO DB."欧指变盘"', 1)[1].split(";", 1)[0]
         for column in ("主胜赔率", "平局赔率", "客胜赔率"):
             self.assertIn(column, block)
-        self.assertIn("WHEN 80 THEN 1", block)
-        self.assertIn("WHEN 1129 THEN 21", block)
-        self.assertIn("ORDER BY 4, 6 ASC, 5 DESC", block)
+        self.assertNotIn("机构顺序", block)
+        self.assertNotIn("源序号", block)
+        self.assertIn("ORDER BY 2, 4 ASC, 11", block)
 
-    def test_handicap_and_over_under_detail_use_fixed_institution_order(self):
+    def test_handicap_and_over_under_detail_use_time_order(self):
         for table in ("亚盘变盘", "大小球变盘"):
             block = self.text.split(f'INSERT INTO DB."{table}"', 1)[1].split(";", 1)[0]
-            self.assertIn("WHEN 1 THEN 1", block, table)
-            self.assertIn("WHEN 48 THEN 7", block, table)
-            self.assertIn("ORDER BY 4, 7 ASC, 5 DESC", block, table)
+            self.assertNotIn("机构顺序", block, table)
+            self.assertNotIn("源序号", block, table)
+            self.assertIn("ORDER BY 2, 5 ASC", block, table)
 
     def test_gate_checks_seven_tables_and_no_views(self):
         gate = self.text.split("name: GATE_FINAL", 1)[1]

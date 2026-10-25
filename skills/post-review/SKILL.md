@@ -42,7 +42,7 @@ metadata: { "emoji": "📋" }
 - [ ] 待验证表已回检（支持/反对/无触发），不满 5 场不改永久规矩
 - [ ] 21 天日落机制已执行（超 21 天无触发条目已打上已日落归档）
 - [ ] Graphify MCP（`query_graph` / `get_node`）能命中本场用到的论文节点与真实证据链（带 `source_location`）
-- [ ] `validate_semantics` 语义门禁与探针验真已核验：调用 EvoOntology 校验赛前推演是否存在探针冲突；核查赛前是否调用 `resolve_semantics` 核销了 23 家 `supported` 状态；若赛前触发了 `block` 探针（如平博定海神针、脉冲假摔），认知契约卡是否足额进行了反向破译对质；若遗漏探针对质直接定性为分析师失职！
+- [ ] `validate_semantics` 语义门禁与探针验真已核验：调用 EvoOntology 校验赛前推演是否存在探针冲突；核查赛前是否调用 `resolve_ontology_task` 核销了 23 家 `supported` 状态；若赛前触发了 `block` 探针（如平博定海神针、脉冲假摔），认知契约卡是否足额进行了反向破译对质；若遗漏探针对质直接定性为分析师失职！
 - [ ] 对本场实际应用的方法记录作用与失误位置；未涉及的论文不为凑数填表
 - [ ] 欧亚折合与造热：写了折合 vs 实盘；造热只记疑点；未把升盘降水写成必出对面
 
@@ -88,7 +88,7 @@ read_file(path="memory/{复盘日期}.md")
 
 - **当期开售全部 N 场推演场次**：逐一提取联赛、主队、客队、首选/次选、让球推荐、信心度、比赛 ID 及赛前契约卡；全量场次 100% 纳入复盘对账主盘与累计统计分母，严禁设立“候补免责池”。
 
-- **赛前漏推与虚假推演（无工具轨迹）红线报警**：若赛程索引（`meta.md`）中存在但赛前未做深度推演、缺失契约卡封存，或者**赛前执行轨迹（transcript）中缺失真实的 EvoOntology 官方 MCP 工具调用记录（1 次 `browse_semantics` + 5 批次 `resolve_semantics`）**的场次，复盘报告**必须置顶输出红色高危警报**：
+- **赛前漏推与虚假推演（无工具轨迹）红线报警**：若赛程索引（`meta.md`）中存在但赛前未做深度推演、缺失契约卡封存，或者**赛前执行轨迹（transcript）中缺失真实的 EvoOntology 官方 MCP 调用记录（`start_ontology_task` ➔ 1 次 `browse_semantics` + 5 批次 `resolve_ontology_task` ➔ `finish_ontology_task`）**的场次，复盘报告**必须置顶输出红色高危警报**：
   `> [!CAUTION] 🚨 赛前推演漏场红线报警：发现当期开售场次 {编号} {主队} vs {客队} (ID: {matchId}) 赛前未推演或缺失官方工具调用轨迹！`
   表格中强制标注为 `[赛前未推演/不可评分]`，严禁赛后反向脑补预测或冒领命中，并锁定漏场责任记录入事故日志。此类场次不计入推荐总数与命中率计算。
 
@@ -645,54 +645,8 @@ read_file(path="MEMORY.md")
 
 复盘不是记流水账，而是驱动知识图谱与语义本体自愈自进化的源头活水。必须严格遵循 `ruc-datalab/EvoOntology` 官方四步闭环与防刻舟求剑纪律：
 
-### 1. 结构化轨迹原子落盘（TaskTrajectory Registration）
-每场复盘对账完毕，对所有**首选未中或次选覆盖的异常场次**，必须调用 `write_file` 原子落盘官方标准轨迹文件 `.evoontology/trajectories/task_{销售日}_{matchId}.json`（严格满足官方 Schema）：
-```json
-{
-  "task_id": "task_{销售日}_{matchId}",
-  "match_id": "{matchId}",
-  "fixture": "{主队} vs {客队}",
-  "league": "{联赛}",
-  "kickoff_time": "{比赛开球时间}",
-  "input_snapshot": "data/{销售日}/{matchId}.db",
-  "triggered_constraints": [
-    {
-      "id": "{触发约束ID，如 constraint_pinnacle_stability}",
-      "term": "{关联Term}",
-      "severity": "block",
-      "evidence": "{赛前对质与盘口异动证据}"
-    }
-  ],
-  "agent_prediction": {
-    "had": "{赛前胜平负预测}",
-    "hhad": "{赛前让球预测}",
-    "hypothesis": "{赛前做市商博弈假说与落槌依据}"
-  },
-  "actual_outcome": {
-    "score": "{完场比分}",
-    "had": "{实际胜负平}",
-    "hhad": "{实际让球赛果}"
-  },
-  "failure_diagnosis": {
-    "causal_chain": "{赛果穿透因果链剖析}",
-    "attribution_dimension": "{归因维度：如做市商诱买陷阱 / 哨兵防守盲区 / 跨市场背离误判}",
-    "root_cause": "{核心失误根因：排查哪项做市商信号被误读或遗漏}"
-  },
-  "remedy": {
-    "suggested_patch": "{建议改进的博弈约束或语义映射}",
-    "ontology_version": "ontology_v2",
-    "gate_status": "pending_validation"
-  }
-}
-```
-落盘后，立即调用 EvoOntology 官方 MCP 工具确认本场轨迹源：
-```json
-// 调用 mcp__evo-semantic__confirm_trajectory_sources
-{
-  "sources": [".evoontology/trajectories/task_{销售日}_{matchId}.json"],
-  "workspace": ".evoontology"
-}
-```
+### 1. 官方任务轨迹核对（只读）
+赛前分析已通过 `start_ontology_task` ➔ `resolve_ontology_task` / `execute_ontology_query` ➔ `finish_ontology_task` 生成官方轨迹 `.evoontology/trajectories/{task_id}.json`；任务 `batch_id` 固定为 `{销售日}_{matchId}`，复盘按此核对。复盘只读取并核验该轨迹，**绝对禁止用 `write_file` 另写 `task_{销售日}_{matchId}.json` 之类的自定义轨迹，也绝对禁止手工补造工具结果**。若本场没有官方轨迹，如实标注 `[赛前未记录官方轨迹]`，不补造、不冒充。
 
 ### 2. 进化门禁唤醒检测（Evolution Due Check）
 复盘流程末尾必须调用 `mcp__evo-semantic__evolution_status(workspace=".evoontology")`：

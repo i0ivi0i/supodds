@@ -2,7 +2,9 @@
   {
     "aliases": [
       "fixture",
-      "比赛"
+      "比赛",
+      "球队基本情况",
+      "比赛信息"
     ],
     "definition": "A football fixture identified by 比赛ID and described by league, home team, away team, kickoff time, sales date, and lottery code.",
     "evidence": [
@@ -16,8 +18,64 @@
   },
   {
     "aliases": [
+      "players",
+      "阵容",
+      "首发",
+      "替补"
+    ],
+    "definition": "A team's player list, split into starters and substitutes, with shirt number, name, and position when present.",
+    "evidence": [
+      "ev_v0_team_info_shape"
+    ],
+    "id": "term_lineup",
+    "name": "Lineup",
+    "scope": "球队基本情况 rows with 数据类型='阵容'",
+    "type": "concept"
+  },
+  {
+    "aliases": [
       "sportsbook",
-      "机构"
+      "机构",
+      "博彩公司",
+      "做市商",
+      "澳彩",
+      "皇冠",
+      "365",
+      "Bet365",
+      "bet365",
+      "易胜博",
+      "平博",
+      "香港马会",
+      "马会",
+      "188Bet",
+      "188bet",
+      "威廉希尔",
+      "威廉",
+      "立博",
+      "伟德",
+      "Interwetten",
+      "interwetten",
+      "Bwin",
+      "bwin",
+      "SNAI",
+      "snai",
+      "必发",
+      "利记",
+      "沙巴",
+      "Marathon",
+      "marathon",
+      "Betway",
+      "betway",
+      "Unibet",
+      "unibet",
+      "Paddy Power",
+      "paddy power",
+      "10Bet",
+      "10bet",
+      "中国体彩",
+      "体彩",
+      "Polymarket",
+      "polymarket"
     ],
     "definition": "A sportsbook or lottery operator with a stable 机构编号 and 机构 display name.",
     "evidence": [
@@ -32,7 +90,9 @@
     "aliases": [
       "1X2",
       "胜平负",
-      "欧洲指数"
+      "欧洲指数",
+      "欧指",
+      "欧赔"
     ],
     "definition": "Three-way home/draw/away decimal odds for a match and bookmaker, with opening and latest snapshots.",
     "evidence": [
@@ -47,7 +107,8 @@
     "aliases": [
       "AH",
       "让球",
-      "亚洲让球盘"
+      "亚洲让球盘",
+      "亚盘"
     ],
     "definition": "Asian handicap line with home and away water for a match, bookmaker, and line sequence, with opening and latest snapshots.",
     "evidence": [
@@ -62,7 +123,8 @@
     "aliases": [
       "OU",
       "大小球",
-      "进球数盘"
+      "进球数盘",
+      "大小球盘"
     ],
     "definition": "Over/under line with over and under water for a match, bookmaker, and line sequence, with opening and latest snapshots.",
     "evidence": [
@@ -76,7 +138,9 @@
   {
     "aliases": [
       "变盘",
-      "赔率变化"
+      "赔率变化",
+      "变盘时间",
+      "赔率时序"
     ],
     "definition": "A timestamped sequence of odds, line, or water changes for a market. Chronological order comes from 变盘时间, not row position.",
     "evidence": [
@@ -89,58 +153,16 @@
   },
   {
     "aliases": [
-      "数据状态",
-      "端点状态"
-    ],
-    "definition": "Per-endpoint collection status and fingerprint for a match; the clean database has 27 analysis endpoints.",
-    "evidence": [
-      "ev_v0_status_counts"
-    ],
-    "id": "term_data_status",
-    "name": "Endpoint Data Status",
-    "scope": "球队基本情况 rows with 数据类型='数据状态'",
-    "type": "metric"
-  },
-  {
-    "aliases": [
-      "机构状态",
-      "bookmaker status"
-    ],
-    "definition": "Per-bookmaker market availability for a match; the clean database has 22 database bookmaker slots.",
-    "evidence": [
-      "ev_v0_status_counts"
-    ],
-    "id": "term_bookmaker_status",
-    "name": "Bookmaker Slot Status",
-    "scope": "球队基本情况 rows with 数据类型='机构状态'",
-    "type": "metric"
-  },
-  {
-    "aliases": [
       "伤停",
       "伤病"
     ],
     "definition": "Injury or absence records with team, player, and medical reason when present.",
     "evidence": [
-      "ev_v0_row_counts"
+      "ev_v0_team_info_shape"
     ],
     "id": "term_injury",
     "name": "Injury",
     "scope": "球队基本情况 rows with 数据类型='伤停'",
     "type": "concept"
-  },
-  {
-    "aliases": [
-      "技术统计",
-      "team stats"
-    ],
-    "definition": "Team-level match statistics stored as metric/value pairs when present.",
-    "evidence": [
-      "ev_v0_row_counts"
-    ],
-    "id": "term_team_stats",
-    "name": "Team Match Statistics",
-    "scope": "球队基本情况 rows with 数据类型='技术统计'",
-    "type": "metric"
   }
 ]

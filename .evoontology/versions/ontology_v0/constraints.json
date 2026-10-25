@@ -21,25 +21,6 @@
   },
   {
     "confidence": "high",
-    "constraint_type": "data_quality",
-    "description": "An empty market is valid only when the source explicitly says it is not offered. Record it as not_offered; never fabricate a placeholder row or promote it to supported.",
-    "evidence": [
-      "ev_v0_status_counts"
-    ],
-    "id": "constraint_empty_state",
-    "scope": "All endpoint and bookmaker status reads.",
-    "severity": "block",
-    "target": "term_data_status",
-    "trigger_keywords": [
-      "未开盘",
-      "not_offered",
-      "空状态",
-      "缺失",
-      "empty"
-    ]
-  },
-  {
-    "confidence": "high",
     "constraint_type": "business_rule",
     "description": "The analytical database exposes exactly seven final SQLite tables and zero views. Do not use staging tables, raw JSON, Markdown match files, or a second database as analysis input.",
     "evidence": [
@@ -61,26 +42,7 @@
   {
     "confidence": "high",
     "constraint_type": "data_quality",
-    "description": "The bookmaker status block contains 22 database slots, including 188Bet and China Sports Lottery. Polymarket is a delivery-only reference and must not be invented as a 23rd database bookmaker row.",
-    "evidence": [
-      "ev_v0_status_counts"
-    ],
-    "id": "constraint_bookmaker_slots",
-    "scope": "欧指, 亚盘, 大小球, and 机构状态.",
-    "severity": "block",
-    "target": "term_bookmaker_status",
-    "trigger_keywords": [
-      "23家",
-      "22家",
-      "机构状态",
-      "Polymarket",
-      "bookmaker status"
-    ]
-  },
-  {
-    "confidence": "high",
-    "constraint_type": "business_rule",
-    "description": "Never fill a missing odd, line, timestamp, team, or status by estimation or fabrication. Missing data stays an explicit gap or not_offered state.",
+    "description": "Never fill a missing odd, line, timestamp, team, or status by estimation or fabrication. Missing data stays an explicit gap; a market absent from the seven tables is not offered.",
     "evidence": [
       "ev_v0_integrity"
     ],
@@ -93,25 +55,28 @@
       "补值",
       "伪造",
       "缺失",
-      "fabricate"
+      "fabricate",
+      "not_offered"
     ]
   },
   {
     "confidence": "high",
     "constraint_type": "data_quality",
-    "description": "The data-status block must expose 27 rows across 27 distinct analysis endpoints. A smaller set means the capture is incomplete and must not be treated as a complete match database.",
+    "description": "球队基本情况 has exactly 14 columns and only three data types: 比赛信息 (one row per match), 阵容 (player lineup rows), and 伤停 (injury rows). A different shape means schema drift and must be treated as a data-quality failure.",
     "evidence": [
-      "ev_v0_status_counts"
+      "ev_v0_team_info_shape"
     ],
-    "id": "constraint_27_endpoints",
-    "scope": "球队基本情况 data-status reads.",
+    "id": "constraint_team_info_shape",
+    "scope": "球队基本情况 reads.",
     "severity": "block",
-    "target": "term_data_status",
+    "target": "term_match",
     "trigger_keywords": [
-      "27个端点",
-      "数据状态",
-      "endpoint",
-      "capture completeness"
+      "14列",
+      "比赛信息",
+      "阵容",
+      "伤停",
+      "schema drift",
+      "球队基本情况"
     ]
   },
   {

@@ -7,14 +7,14 @@ metadata: { "emoji": "📊" }
 对 match-screening 筛选出的每场比赛，按「EvoOntology 专属视网膜全量解析放行（无底层源数据不下锅）+ 10 步深度推演」流程进行深度分析，给出综合倾向、信心度和比分概率排序。
 ## 纯逻辑推演数据底座门禁（推演前置）
 
-- **推演态序贯硬死锁与纯分析师角色边界（纯只读与契约专注）**：本技能行数严格控制在不超过 1200 行；本技能为纯逻辑推演大脑，绝对强制仅在【阶段一底层源数据 `data/{销售日}/{matchId}.db` 物理文件已由工位 1（`match-scraper`）落盘且 EvoOntology MCP 连通】后方准通过 `view_file` 深度全量通读并执行！在无物理数据落盘（阶段0与阶段1）前，主会话与各 Agent 绝对严禁提前阅读本技能，杜绝思维链超前空转堵车！未见底层源数据必须立即阻断移交工位 1 搬运工。
+- **推演态序贯硬死锁与纯分析师角色边界（纯只读与契约专注）**：本技能行数严格控制在不超过 1200 行；本技能为纯逻辑推演大脑，仅通过官方 Task API 写 `tasks/` 与 `trajectories/`，绝不修改本体版本、语义对象或 active；绝对强制仅在【阶段一底层源数据 `data/{销售日}/{matchId}.db` 物理文件已由工位 1（`match-scraper`）落盘且 EvoOntology MCP 连通】后方准通过 `view_file` 深度全量通读并执行！在无物理数据落盘（阶段0与阶段1）前，主会话与各 Agent 绝对严禁提前阅读本技能，杜绝思维链超前空转堵车！未见底层源数据必须立即阻断移交工位 1 搬运工。
 - **大模型是唯一推演大脑（Skills 为认知中枢）**：严禁任何代码侵入业务推演。所有博弈破译、庄家第一性原理反向推演、诱盘阻盘定性与胜平负决策，100% 由大模型深度阅读本技能并结合 EvoOntology 官方 MCP 提取真实底层源数据思考完成。
-- **【无视网膜工具调用熔断铁律】（Zero-Tool-Call Hard Circuit Breaker）**：大模型思维链中**必须包含真实的 EvoOntology 官方 MCP 工具调用记录**（`mcp__evo-semantic__browse_semantics` ➔ `mcp__evo-semantic__resolve_semantics`）。凡未调用工具、企图直接通过上下文记忆、文件裸视或直觉推演出票者，直接判定为违规伪推演并强制熔断中止，严禁输出任何胜平负或让球定性！
+- **【无视网膜工具调用熔断铁律】（Zero-Tool-Call Hard Circuit Breaker）**：大模型思维链中**必须包含真实的 EvoOntology 官方 MCP 调用记录**（Task 内：`start_ontology_task` ➔ `browse_semantics` ➔ 5 批次 `resolve_ontology_task` ➔ `execute_ontology_query` ➔ `finish_ontology_task`）。凡未调用工具、企图直接通过上下文记忆、文件裸视或直觉推演出票者，直接判定为违规伪推演并强制熔断中止，严禁输出任何胜平负或让球定性！
 - **EvoOntology 官方看数视网膜（MCP 工具驱动看数，绝不跳过 EvoOntology 视网膜工具直接读，绝对严禁看 .md）**：
-  必须严守主人至高命令——大模型推演**绝不能跳过 EvoOntology 官方 MCP 视网膜工具链（`browse_semantics` 与 5 批次 `resolve_semantics`）去“直接裸读”文件，也绝对严禁读取容易引发假数据与幻觉的 `{matchId}.md`**！
+  必须严守主人至高命令——大模型推演**绝不能跳过 EvoOntology 官方 MCP 视网膜工具链（`browse_semantics` 与 5 批次 `resolve_ontology_task`）去“直接裸读”文件，也绝对严禁读取容易引发假数据与幻觉的 `{matchId}.md`**！
   若大模型直接调用通用文件工具通篇裸读未解包的 SQLite payload，几千行原始混淆 JS 变量会瞬间灌满上下文引发严重幻觉！
   依循 EvoOntology 官方协议（`ruc-datalab/EvoOntology`），看数必须且只能由 EvoOntology 官方 MCP 工具驱动闭环：
-  ① **语义导航与 23 家核销（MCP 必调）**：推演大脑必须首先调用 EvoOntology 官方 MCP 工具（`browse_semantics` 检索做市机位 ➔ 5 批次 `resolve_semantics` 完整核销 23 家做市商状态并获取权威 Mapping 路径与 `block` 级硬约束，遇非预期 `gap` 立即触发强阻断）；
+  ① **语义导航与 23 家核销（MCP 必调）**：推演大脑必须首先调用 EvoOntology 官方 MCP 工具（`browse_semantics` 检索做市机位 ➔ 5 批次 `resolve_ontology_task` 完整核销 23 家做市商状态并获取权威 Mapping 路径与 `block` 级硬约束，遇非预期 `gap` 立即触发强阻断）；
   ② **EvoOntology 坐标锚定与受限定向提取**：在 Mapping 权威路径（`table`、`column`、`semantic_filter` 与 `aggregation_semantics`）坐标锁死下，推演大脑只准按坐标针对最终七张业务表进行受限提取（`欧指`/`欧指变盘` 提纯欧指与变盘、`球队基本情况` 提纯阵容与伤停行、`亚盘`/`亚盘变盘`、`大小球`/`大小球变盘` 提纯盘口与流水），严禁全文无序裸视整篇混淆 JS！大模型专注负责 10 步博弈推理，坚决不增设任何 `slices/*.json` 冗余中间文件！
 - **数据地基三不铁律约束（Anti-Error, Anti-Fake, Anti-Misplacement Triad Invariant）**：
   推演大脑必须严守主人最高铁律（“要保证不会获取到错误数据，也不能写入假数据，数据也不能放错”）：
@@ -54,7 +54,7 @@ work_order:
 
 对工单中的每场比赛按以下正向执行顺序进行（阶段一采集过验 ➔ 阶段二纯推理）：
 
-- 1. **步骤 1：EvoOntology 专属视网膜全量解析接入与核验（绝对前置）**：优先直接通过 EvoOntology 官方 MCP 工具（`browse_semantics` 与 5 批次 `resolve_semantics`）直连已在阶段一由 `match-scraper` 搬运落盘至 `data/{销售日}/{matchId}.db` 的专属底层源数据；推演大脑绝对严禁读取容易引发假数据幻觉的 `{matchId}.md`（`{matchId}.md` 仅留给人类主人人工复盘看板）！若底层 `data/{销售日}/{matchId}.db` 不存在、损坏或门禁未过，立即触发物理阻断并请求工位 1 补货。未见底层物理源数据文件，严禁进入推演！
+- 1. **步骤 1：EvoOntology 专属视网膜全量解析接入与核验（绝对前置）**：优先直接通过 EvoOntology 官方 MCP 工具（`browse_semantics` 与 5 批次 `resolve_ontology_task`）直连已在阶段一由 `match-scraper` 搬运落盘至 `data/{销售日}/{matchId}.db` 的专属底层源数据；推演大脑绝对严禁读取容易引发假数据幻觉的 `{matchId}.md`（`{matchId}.md` 仅留给人类主人人工复盘看板）！若底层 `data/{销售日}/{matchId}.db` 不存在、损坏或门禁未过，立即触发物理阻断并请求工位 1 补货。未见底层物理源数据文件，严禁进入推演！
 - 2. **步骤 2：历史记忆召回与方法校准**：检查 `MEMORY.md` 中是否有当前生效的「已采用」方法改进条目，以及《庄家做市商经典操盘战法库》与处于活跃验证期的【待验证假设】；若适用于本场比赛特征，在分析中引用该改进版本并记录其对证据取舍的具体影响；检查当日记忆避免误触重复推演。
 - 3. **步骤 3：10 步深度推演与学术反审（调阅 EvoOntology 原生机位）**：纯只读消化本场底层源数据，结合 EvoOntology 官方原生做市语义机位（官方 MCP 工具），严格执行 10 步深度分析（基本面→伤停→泊松→欧指→亚盘→大小球→合理性→变动→关键点/疑点/矛盾→风险），主观判断经过 19 篇论文四大质问纠偏，最终输出单场结构化评估与不可篡改【四维认知契约卡】。
 
@@ -92,21 +92,20 @@ Render all ontology versions as one standalone, offline, single-file interactive
   - `workspace`: 动态锚定当前活跃工作区根目录下的 `.evoontology/` 容器路径（`path.join(CURRENT_WORKSPACE, ".evoontology")`，自适应任何磁盘与文件夹迁移，杜绝硬编码死路径）；
   - `version`: 默认锁死 `"active"`（由底层 `active.json` 动态解析至生产活跃版本，严格只读）；
   - `Anti-Fabrication`: 恪守英文原版 `Never fabricate`，未开盘实录 `[官方未开盘]`，严禁大模型裸视未解包原始代码，严禁在思维链中臆测编造。
-
 #### 1.2 官方 MCP 三步语义导航法（Three-Step Semantic Navigation）
 大模型在进入 10 步推演前，**绝对强制调用 EvoOntology 官方 MCP 工具**建立语义视网膜，思维链必须包含真实调用记录：
-1. **步骤 1.2.1（会话意图引导）**：读取 `session-manifest`（资源 `evo-semantic://session-manifest`），明确当前活跃版本 `ontology_v2` 与可用工具范围；
+1. **步骤 1.2.1（会话意图引导）**：读取 `session-manifest`（资源 `evo-semantic://session-manifest`），明确当前活跃版本 `ontology_v0` 与可用工具范围；
 2. **步骤 1.2.2（语义探针检索）**：调用 `browse_semantics(workspace="{CURRENT_WORKSPACE}/.evoontology", query="做市商 平博 澳彩")`，召回核心博弈概念拓扑；
 3. **步骤 1.2.3（23 家做市商 5 批次原子核销）**：
-   依据 EvoOntology 官方源码 `evoontology/runtime/tools.py` 第 63 行 JSON Schema 声明（`"maxItems": 5`）与 `runtime.py` 中的 `_MAX_RESOLVE = 5` 硬限制（单次传入超过 5 家会被官方底层自动截断至 `skipped`），推演大脑**必须且只能以 5 个原子批次完整核销法定 23 家做市商**：
-   - 批次 1: `resolve_semantics(mentions=["澳彩", "皇冠", "平博", "Bet365", "易胜博"])`
-   - 批次 2: `resolve_semantics(mentions=["香港马会", "188Bet", "威廉希尔", "立博", "伟德"])`
-   - 批次 3: `resolve_semantics(mentions=["Interwetten", "Bwin", "SNAI", "必发", "利记"])`
-   - 批次 4: `resolve_semantics(mentions=["沙巴", "Marathon", "Betway", "Unibet", "Paddy Power"])`
-   - 批次 5: `resolve_semantics(mentions=["10Bet", "中国体彩", "Polymarket"])`（Polymarket 仅核销 `delivery_only`，不提取赔率、不参与推演）
+   在官方 Task 内，以下 5 批次必须使用 `resolve_ontology_task(task_id, mentions=[...])`；该工具在任务锁定的 `ontology_version` 上执行 `resolve_semantics` 并自动记录 `semantic_calls`，不得绕过 Task 直接调用裸 `resolve_semantics`。依据 EvoOntology 官方源码 `evoontology/runtime/tools.py` 第 63 行 JSON Schema 声明（`"maxItems": 5`）与 `runtime.py` 中的 `_MAX_RESOLVE = 5` 硬限制（单次传入超过 5 家会被官方底层自动截断至 `skipped`），推演大脑**必须且只能以 5 个原子批次完整核销法定 23 家做市商**：
+   - 批次 1: `resolve_ontology_task(task_id, mentions=["澳彩", "皇冠", "平博", "Bet365", "易胜博"])`
+   - 批次 2: `resolve_ontology_task(task_id, mentions=["香港马会", "188Bet", "威廉希尔", "立博", "伟德"])`
+   - 批次 3: `resolve_ontology_task(task_id, mentions=["Interwetten", "Bwin", "SNAI", "必发", "利记"])`
+   - 批次 4: `resolve_ontology_task(task_id, mentions=["沙巴", "Marathon", "Betway", "Unibet", "Paddy Power"])`
+   - 批次 5: `resolve_ontology_task(task_id, mentions=["10Bet", "中国体彩", "Polymarket"])`（Polymarket 仅核销 `delivery_only`，不提取赔率、不参与推演）
 4. **核销判定与 Gap 熔断断路器（Skipped ≡ [] 强断言）**：
    核查上述 5 批次返回中，必须严格断言 `skipped ≡ []`（绝无截断漏掉任何做市商！），且 23 家做市商全部返回 `coverage_status: "supported"`（或官方合法未开盘）。若出现非空 `skipped`、非预期 `unresolved` 或返回 `unavailable`（异常 Gap），或触发 `severity: "block"` 级约束，立即判定为做市机位遗漏并强制阻断推演！
-5. **Trajectory 真实轨迹验真**：推演大脑思维链中必须包含这 1 次 `browse_semantics` 与 5 批次 `resolve_semantics` 的真实 MCP 调用事件记录，宿主日志 `transcript.jsonl` 作为唯一防伪铁证。凡无工具调用记录者，判定为偷偷裸看或凭空脑补，强制熔断！
+5. **Trajectory 真实轨迹验真**：推演大脑思维链中必须包含这 1 次 `browse_semantics` 与 5 批次 `resolve_ontology_task` 的真实 MCP 调用事件记录（底层自动落为 5 次 `resolve_semantics`），宿主日志 `transcript.jsonl` 作为唯一防伪铁证。凡无工具调用记录者，判定为偷偷裸看或凭空脑补，强制熔断！
 6. **获取字段 Mapping 权威规范**：从 `resolve_semantics` 的返回中提取各机构与各盘口的权威 Mapping 路径（`table`、`column`、`semantic_filter` 与 `aggregation_semantics`），锁死字段语义定义。
 
 #### 1.3 核心约束强阻断与对质（Constraint Enforcement & Auto-Debate）
@@ -121,23 +120,23 @@ Render all ontology versions as one standalone, offline, single-file interactive
 
 #### 1.4 标准化 EvoOntology 视网膜工具精准提取契约（Tool-Driven Semantic Grounding Protocol）
 依循 EvoOntology 官方机制 Principle 3：“两导航工具（browse/resolve）返回元数据和指导，数据查询归属宿主原生工具”：
-- **MCP 工具驱动事实绑定（绝不跳过 EvoOntology 官方视网膜工具裸读，绝对严禁看 .md）**：推演大脑**绝不能误以为跳过 EvoOntology 官方 MCP 工具链（`browse_semantics` ➔ 5 批次 `resolve_semantics`）“直接用 read_file 读 SQLite payload 即可”**！若跳过视网膜工具全包裸读，几千行原始混淆 JS 会瞬间冲垮注意力引发严重幻觉！推演大脑看数必须 100% 依托 EvoOntology 官方 MCP 工具链路获得 Mapping 坐标（table、column、cid 字典），再使用 `execute_ontology_query` 受限 SQL 定向查验，绝对严禁推演大脑读取容易抽稀丢失数据的 `{matchId}.md`（`.md` 仅为人类可视化对账看板）；
-- **EvoOntology Mapping 坐标锚定与定向端点提取**：推演大脑必须在调用 `browse_semantics` ➔ 5 批次 `resolve_semantics` 获取 Mapping 权威路径（`table`、`column`、`semantic_filter` 与 `aggregation_semantics`）后，仅针对 Mapping 锁定的特定原生端点进行精准提取，严禁全量通读整个文件：
-  1. 欧指做市端点：依据 Mapping 锁定的 21 家欧指机构字典，仅从最终 `欧指` 表提取法定 21 家权威欧指初即盘胜平负；变盘时序从 `欧指变盘` 按 `机构顺序, 变盘时间, 源序号` 提取；188Bet 走亚盘 42 槽位；Polymarket 仅交付、不进入分析提取；
+- **MCP 工具驱动事实绑定（绝不跳过 EvoOntology 官方视网膜工具裸读，绝对严禁看 .md）**：推演大脑**绝不能误以为跳过 EvoOntology 官方 MCP 任务工具链（`browse_semantics` ➔ 5 批次 `resolve_ontology_task`）“直接用 read_file 读 SQLite payload 即可”**！若跳过视网膜工具全包裸读，几千行原始混淆 JS 会瞬间冲垮注意力引发严重幻觉！推演大脑看数必须 100% 依托 EvoOntology 官方 MCP 工具链路获得 Mapping 坐标（table、column、cid 字典），再使用 `execute_ontology_query` 受限 SQL 定向查验，绝对严禁推演大脑读取容易抽稀丢失数据的 `{matchId}.md`（`.md` 仅为人类可视化对账看板）；
+- **EvoOntology Mapping 坐标锚定与定向端点提取**：推演大脑必须在调用 `browse_semantics` ➔ 5 批次 `resolve_ontology_task` 获取 Mapping 权威路径（`table`、`column`、`semantic_filter` 与 `aggregation_semantics`）后，仅针对 Mapping 锁定的特定原生端点进行精准提取，严禁全量通读整个文件：
+  1. 欧指做市端点：依据 Mapping 锁定的 21 家欧指机构字典，仅从最终 `欧指` 表提取法定 21 家权威欧指初即盘胜平负；变盘时序从 `欧指变盘` 按 `机构编号, 变盘时间` 提取；188Bet 走亚盘 42 槽位；Polymarket 仅交付、不进入分析提取；
   2. 攻防与体彩端点：依据 Mapping 路径从 `球队基本情况` 的 `阵容`、`伤停` 行提取体彩 HAD/HHAD 官方让球与固定奖金、阵容真实伤停名单；`技术统计` 已不进入最终七表，不得再从数据库提取；
   3. 变盘流水端点：依据 Mapping 路径仅从 `欧指变盘`、`亚盘变盘`、`大小球变盘` 提取 7 家核心做市商初终盘与关键脉冲/阶梯异动时序；
   4. 交付端点：Polymarket 不进入分析提取，由工位 4 在交付阶段独立调用 Gamma/CLOB 检索真实链接与报价；分析阶段不读取 `polymarket.json`。
 - **拒绝裸视无序乱码与拒绝冗余中间文件**：大脑在 EvoOntology Mapping 路径指引下定向读取特定键值，杜绝在思维链中漫无目的地裸读整篇未解包 JS；坚决禁止在磁盘生成任何 `slices/*.json` 冗余中间文件！
 - **全语种零临时脚本硬铁律（Zero-Script Invariant: All Languages）**：推演大脑与各 Agent 绝对严禁编写任何全语种临时脚本（全禁 `.py/.ps1/.js/.sh`），绝对禁止在控制台敲 `python -c` 粗暴读数！违规记录严格锁定为 0！
 - **生产代码零修改铁律（Zero-Python-Code Invariant）**：依循 EvoOntology 官方哲学（智能在 Skill SOP，生产环境零侵入），绝对严禁推演大脑擅自创建、修改或 patch 任何生产与测试 Python 脚本！
-- **宿主 Trajectory 轨迹不可篡改验真铁律（Provable Tool Trace Invariant）**：推演大脑在给出任何定性、让球与胜平负结论前，宿主底层不可篡改的 `transcript.jsonl` 中必须存在真实的 EvoOntology 官方 MCP 调用记录（1次 `browse_semantics` + 5批次 `resolve_semantics`）。无工具调用记录严禁输出任何推演结论与预测表格！禁止虚构工具调用！
+- **宿主 Trajectory 轨迹不可篡改验真铁律（Provable Tool Trace Invariant）**：推演大脑在给出任何定性、让球与胜平负结论前，宿主底层不可篡改的 `transcript.jsonl` 中必须存在真实的 EvoOntology 官方 MCP 调用记录（1次 `browse_semantics` + 5批次 `resolve_ontology_task`，底层自动落为 5 次 `resolve_semantics`）。无工具调用记录严禁输出任何推演结论与预测表格！禁止虚构工具调用！
 - **工具职责四级分工界线（四位一体）**：
   - 数据搬运：100% 独家归属工位 1 `match-scraper`（Scrapling 官方 Spider 统一调度，内置 AutoThrottle 礼貌控频与单并发限流，优先直取 Tier 1 聚合核心端点，经 ETLX 原子落盘 SQLite SSOT；人类简报同步装配）；
-  - 语义导航与防漏：100% 独家归属 `evo-semantic` MCP（5 批次 `resolve_semantics` 核销 23 家，遇 gap 强阻断）；
+  - 语义导航与防漏：100% 独家归属 `evo-semantic` MCP（5 批次 `resolve_ontology_task` 核销 23 家，遇 gap 强阻断）；
   - 事实全量提取：100% 独家归属推演大脑（在 EvoOntology MCP 坐标锁定下，使用 `execute_ontology_query` 定向提取结构化字段，严禁跳过 EvoOntology 视网膜工具全包裸读 SQLite payload，0 幻觉、0 漏数）；
   - 精算去水与概率：100% 独家归属宿主独立 `sports-math` MCP（`devig_oo_epc` 与 `poisson_dixon_coles`）。
-- **任务轨迹闭环（可选）**：可通过 `start_ontology_task` 绑定推演工单，推演完成后调用 `finish_ontology_task` 固化做市证据轨迹，供赛后机器复盘对账。
-
+- **任务轨迹闭环（官方 Task API，强制自动记录）**：每场推演通过底层门禁后，先核对 `.evoontology/project.json` 的 `data_source` 绝对路径与当前 `data/.evo/current.db` 绝对路径一致（项目搬家后若不一致，立即阻断并交总控重绑，绝不在旧路径上推演）；再 `start_ontology_task(question_id="q_match_read_active", version="active", batch_id="{销售日}_{matchId}")` 取得 `task_id`；再调用一次 `browse_semantics` 并用 `record_ontology_task_event` 记录真实结果；5 批次用 `resolve_ontology_task(task_id, mentions=[...])`（每批 ≤5 家，自动记录 `resolve_semantics`）；数据提取只用 `execute_ontology_query(task_id, query, event_id)`（至少 1 条成功原生命令）；最后 `finish_ontology_task(task_id, final_answer=结构化结果, status="completed")`。禁止手写 `.evoontology/trajectories/*.json` 或伪造结果；任务轨迹是 Evolve 的唯一自动食粮。
+- **官方单库与触发器**：`data_source` 只支持单个绝对 SQLite 文件（`data/.evo/current.db` 硬链接），启用 Task 记录后同一时刻只允许一个 Evo task，且硬链接必须指向本场；`finish` 成功后必须调用 `evolution_status`，`evolution_due=true` 只提示“已达进化门禁”，不得自动启动 Evolve 或伪造 Candidate。
 #### 1.5 底层物理存证核验与门禁（Anti-Fabrication & Drop Verification）
 - **最终七表 Schema 强断言**：底层物理文件 `data/{销售日}/{matchId}.db` 必须存在且新鲜（<30分钟）；只能是 7 张表且 0 视图；`球队基本情况` 必须含 `比赛信息` 1 行、`阵容`/`伤停` 真实行；`欧指` 21 行；`欧指变盘` 等于 staging 的 `euro_history` + `eu_detail_history`；`亚盘`/`大小球` 及两张变盘表逐项存在。Polymarket 仅交付链接，不进入分析库、不参与推演。
 - **职责边界（只读分析，不碰数据工艺）**：本技能只负责纯逻辑推演与读盘判断；抓取、清洗、列结构、落库排版、数据库重建全部归 `skills/match-scraper`，本技能只按 EvoOntology Mapping 读取已落库的业务事实，不定义、不修改表结构。
@@ -569,14 +568,14 @@ call_mcp_tool(ServerName="sports-math", ToolName="poisson_dixon_coles", Argument
 - **亚洲联赛**：澳彩(1)、皇冠(3)、365(8)、易胜博(12)、马会(48) **5 家交叉认证**（4 家 + 马会）。
 
 数据来源与 EvoOntology 视网膜门禁：大模型严禁直接裸视底层原始报文！必须且只能通过 EvoOntology 官方 MCP 工具提取微观机位数据：
-1. **概念发现与 5 批次核销（browse_semantics ➔ 5 批次 resolve_semantics）**：
+1. **概念发现与 5 批次核销（browse_semantics ➔ 5 批次 resolve_ontology_task）**：
    - 官方 MCP 存在单次最多解析 5 个的硬限制（`_MAX_RESOLVE = 5`，超过 5 个会被官方底层自动截断至 `skipped` 并静默丢弃后 18 家！）；
    - 大脑**绝对严禁单次传入超过 5 家**，必须严格按照步骤 1.2.3 的 5 个批次逐批核销全部 23 家做市商：
-     * 第 1 批: `resolve_semantics(mentions=["澳彩", "皇冠", "平博", "Bet365", "易胜博"])`
-     * 第 2 批: `resolve_semantics(mentions=["香港马会", "188Bet", "威廉希尔", "立博", "伟德"])`
-     * 第 3 批: `resolve_semantics(mentions=["Interwetten", "Bwin", "SNAI", "必发", "利记"])`
-     * 第 4 批: `resolve_semantics(mentions=["沙巴", "Marathon", "Betway", "Unibet", "Paddy Power"])`
-     * 第 5 批: `resolve_semantics(mentions=["10Bet", "中国体彩", "Polymarket"])`（Polymarket 仅核销 `delivery_only`，不提取赔率、不参与推演）
+     * 第 1 批: `resolve_ontology_task(task_id, mentions=["澳彩", "皇冠", "平博", "Bet365", "易胜博"])`
+     * 第 2 批: `resolve_ontology_task(task_id, mentions=["香港马会", "188Bet", "威廉希尔", "立博", "伟德"])`
+     * 第 3 批: `resolve_ontology_task(task_id, mentions=["Interwetten", "Bwin", "SNAI", "必发", "利记"])`
+     * 第 4 批: `resolve_ontology_task(task_id, mentions=["沙巴", "Marathon", "Betway", "Unibet", "Paddy Power"])`
+     * 第 5 批: `resolve_ontology_task(task_id, mentions=["10Bet", "中国体彩", "Polymarket"])`（Polymarket 仅核销 `delivery_only`，不提取赔率、不参与推演）
 2. **23 家机构防漏与零截断门禁（skipped ≡ [] 且 status: supported）**：
    - 必须断言每个批次的 `skipped` 数组严格为空（`len(skipped) == 0`）；若出现任一机构被 `skipped`，立即判定为单批超限违规，停线阻断！
    - 累计核验 5 个批次返回的 23 家做市商全部为 `coverage_status: "supported"`（或官方合法未开盘）；若出现非预期的 `gap` 缺口，必须立即阻断推演报警，严禁在残缺数据上推演！
