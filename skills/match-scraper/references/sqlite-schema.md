@@ -1,25 +1,22 @@
 # `data/{销售日}/{matchId}.db`：最终七表
 
-> 2026-10-25 起，比赛数据的唯一持久化真相是 **最终七表 SQLite**。Staging 只做构建期解析，不是持久化分析源。
+> 2026-10-25 起，比赛数据的唯一持久化真相是 **最终七表 SQLite**。Scrapling 只导出仓库外临时 JSONL；ETLX 在 DuckDB 临时表中解析，只把七张最终表写进 SQLite。**没有 staging 物理表，没有视图，没有 ETLX 之后的 Python 清理。**
 
-## 1. 单工作库装配
+## 1. 单工作库直接装配
 
 ```bash
-mkdir -p data/.staging
-rm -f data/.staging/build.db
-py -3.13 -c "import sqlite3,pathlib; c=sqlite3.connect('data/.staging/build.db'); c.executescript(pathlib.Path('data/schema.sql').read_text(encoding='utf-8')); c.close()"
+mkdir -p data/.build
+rm -f data/.build/build.db
+py -3.13 -c "import sqlite3,pathlib; c=sqlite3.connect('data/.build/build.db'); c.executescript(pathlib.Path('data/schema.sql').read_text(encoding='utf-8')); c.close()"
 ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd64.exe"
-"$ETLX" -config data/pipeline.md -date {销售日} -file <临时.jsonl> -only ENDPOINT_PAYLOAD
-"$ETLX" -config data/pipeline.md -date {销售日} -skip ENDPOINT_PAYLOAD
+"$ETLX" -config data/pipeline.md -date {销售日} -file <临时.jsonl>
 ```
 
-- `data/schema.sql`：同时建 staging 15 张表和最终 7 张业务表；全部 `STRICT`，0 视图。
-- 只有一个工作库 `data/.staging/build.db`；没有 `schema_final.sql`、没有第二个 `final.db`。
-- `PUBLISH_FINAL`：把 7 张最终表写回同一个工作库。
-- `GATE_LIVE` 与 `GATE_FINAL`：`violations=0` 后，删除 staging 视图与 staging 表；`VACUUM` 回收空闲页；只留七张业务表。
-- 晋升：备份旧 `data/{销售日}/{matchId}.db`，再把清理后的 `build.db` 复制到活动路径。
-
-清理命令见 `skills/match-scraper/SKILL.md`。清理后再跑一次 `-only GATE_FINAL`，最后复制到 `data/{销售日}/{matchId}.db`。
+- `data/schema.sql`：只建最终 7 张业务表；全部 `STRICT`，0 视图。
+- `data/pipeline.md`：`BUILD_FINAL` 用 `read_json_auto('{file}')` 读 JSONL，14 个 `CREATE TEMP TABLE` 只在内存存在；7 条 `INSERT INTO DB."<表>"` 写最终表。
+- 临时表随 ETLX 连接销毁；`data/.build/build.db` 落盘时天然只有七表，不需要 `DROP`、`VACUUM` 或第二个库。
+- `GATE_FINAL` 在同一工作库上核销七表、0 视图、27 条数据状态、22 条机构状态与各表非空。
+- 晋升：备份旧 `data/{销售日}/{matchId}.db`，把 `data/.build/build.db` 复制到活动路径，再删除 `data/.build`。
 
 ## 2. 最终七表
 
@@ -35,14 +32,14 @@ ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd6
 
 `球队基本情况` = 1 比赛信息 + 阵容 + 伤停 + 技术统计 + 27 数据状态 + 22 机构状态。本场为 1+40+9+276+27+22=375。阵型源值为空，不生成阵型空行。
 
-`欧指变盘` = `1x2d.js` 1,074 行 + `eu_*` 端点 635 行 = 1,709 行；`来源端点` 区分来源，不按赔率相等去重。本场实际有 6 个 `eu_*` 端点，所以来源端点共 7 个；门禁按 staging 的实际 distinct 端点数核对，不写死 8。
+`欧指变盘` = `1x2d.js` 1,074 行 + `eu_*` 端点 635 行 = 1,709 行；`来源端点` 区分来源，不按赔率相等去重。本场实际有 6 个 `eu_*` 端点，所以来源端点共 7 个；门禁按最终表实际 distinct 端点数核对，不写死 8。
 
 ## 3. 关键列与顺序
 
 - `球队基本情况`：`数据类型` 只允许 `比赛信息`、`阵容`、`伤停`、`技术统计`、`数据状态`、`机构状态`；`数据指纹`、`采集时间` 只放在 `数据状态` 行。
 - `欧指`/`欧指变盘`：21 家机构；`机构顺序` 固定为 澳彩(80)、皇冠(545)、Bet365(281)、易胜博(90)、平博(177)、香港马会(432)、威廉希尔(115)、立博(82)、伟德(81)、Interwetten(104)、Bwin(255)、SNAI(110)、必发(2)、利记(474)、沙巴(649)、马拉松(800)、必威(482)、优胜客(386)、Paddy Power(826)、10Bet(16)、中国体彩(1129)。
 - `亚盘`/`亚盘变盘`/`大小球`/`大小球变盘`：7 家机构；`机构顺序` 固定为 澳彩(1)、皇冠(3)、Bet365(8)、易胜博(12)、188Bet(42)、平博(47)、香港马会(48)。
-- 明细读取一律显式 `ORDER BY "机构顺序", "变盘时间", "源序号"`；不依赖 SQLite 物理行序。
+- 明细读取一律显式 `ORDER BY "变盘时间" ASC, "源序号" ASC`；不依赖物理行序，不把最新盘当第一行。
 - `源序号` 是 ETLX 源表技术行号，不是球探字段；只做同一分钟稳定排序，不代替 `变盘时间`。
 - `盘口` 保留源端文本（如 `1/1.5`），不转成自算数字。
 
@@ -65,24 +62,23 @@ FROM "欧指" ORDER BY "机构顺序";
 
 SELECT "变盘时间", "主胜赔率", "平局赔率", "客胜赔率"
 FROM "欧指变盘" WHERE "机构编号" = 545
-ORDER BY "变盘时间", "源序号" DESC;
+ORDER BY "变盘时间" ASC, "源序号" ASC;
 
 SELECT "变盘时间", "主水", "盘口", "客水"
 FROM "亚盘变盘" WHERE "机构编号" = 3
-ORDER BY "变盘时间", "源序号" DESC;
+ORDER BY "变盘时间" ASC, "源序号" ASC;
 
 SELECT "数据类型", "项目", "状态", "数据指纹", "采集时间"
 FROM "球队基本情况" WHERE "数据类型" = '数据状态'
 ORDER BY "项目";
 ```
 
-## 6. 最终门禁（清理前）
+## 6. 最终门禁
 
-`GATE_FINAL` 在清理前检查七表事实；`violations=0` 后执行清理。清理只删除 staging，不改七表数据；清理后只做只读对象清单与行数复核：
+`GATE_FINAL` 是官方 `runs_as: DATA_QUALITY` 块，在 `BUILD_FINAL` 之后自动检查落盘工作库；`violations=0` 后即可晋升。门禁要求：
 
-- 最终库只有 7 张表、0 视图，没有 `endpoint_payload`、源表或 `v_*`。
-- `球队基本情况` 行数 = 1 + staging `lineup` + `injury` + `team_stats` + 27 + 22。
-- `欧指` = 21；`欧指变盘` = staging `euro_history` + `eu_detail_history`。
-- `亚盘` / `大小球` 非空；`亚盘变盘` = staging `ah_history`；`大小球变盘` = staging `ou_history`。
+- 最终库只有 7 张表、0 视图，没有 `endpoint_payload`、任何 staging 表或 `v_*`。
+- `球队基本情况` 行数 = 1 + `数据类型` 为阵容/伤停/技术统计的行数 + 27 + 22。
+- `欧指` = 21；`欧指变盘`、`亚盘变盘`、`大小球变盘` 均非空。
 - `数据状态` 27 行、27 个 distinct 来源端点；`机构状态` 22 行、22 家机构。
 - `PRAGMA integrity_check` 返回 `ok`。

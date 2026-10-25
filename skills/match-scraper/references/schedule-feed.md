@@ -80,4 +80,4 @@ Feed 是 UTF-8 纯文本，以 `$` 分为两段：
 | 编号 | 开球时间 | 联赛 | 主队 | 客队 | matchId | 状态 |
 ```
 
-`matchId` 必须来自 `[0]`，并与后续 `data/{销售日}/{matchId}.db` 的 `endpoint_payload.match_id` 一致。
+`matchId` 必须来自 `[0]`，并与后续 `data/{销售日}/{matchId}.db` 的最终七表 `比赛ID` 一致（可查 `球队基本情况` 或 `欧指`）。

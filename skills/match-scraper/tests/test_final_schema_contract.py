@@ -29,18 +29,7 @@ class FinalSchemaContractTest(unittest.TestCase):
             )
         }
         self.assertEqual(
-            set(
-                {
-                    "球队基本情况",
-                    "欧指",
-                    "欧指变盘",
-                    "亚盘",
-                    "亚盘变盘",
-                    "大小球",
-                    "大小球变盘",
-                }
-            )
-            & tables,
+            tables,
             {"球队基本情况", "欧指", "欧指变盘", "亚盘", "亚盘变盘", "大小球", "大小球变盘"},
         )
         views = self.conn.execute(
@@ -78,11 +67,11 @@ class FinalSchemaContractTest(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):
             self.conn.execute(sql)
 
-    def test_publish_final_does_not_compute_business_values(self):
-        publish = self.pipeline.split("name: PUBLISH_FINAL", 1)[1].split("name: VIEWS", 1)[0]
+    def test_build_final_does_not_compute_business_values(self):
+        build = self.pipeline.split("name: BUILD_FINAL", 1)[1].split("name: GATE_FINAL", 1)[0]
         for token in ("MIN(", "MAX(", "SUM(", "AVG("):
-            self.assertNotIn(token, publish.upper(), token)
-        self.assertEqual(publish.count('INSERT INTO DB."'), 7)
+            self.assertNotIn(token, build.upper(), token)
+        self.assertEqual(build.count('INSERT INTO DB."'), 7)
 
 
 if __name__ == "__main__":

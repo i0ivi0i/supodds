@@ -125,7 +125,7 @@ skills/
 
 | 车间工位 | 核心职责（高内聚） | 机械臂绑定与标准协议 | 工业标准出厂零件托盘（零耦合接口） |
 | :--- | :--- | :--- | :--- |
-| **工位 1：全权数据进货局**<br/>`skills/match-scraper` | 赛程索引抓取、28 个采集端点（27 分析 + 1 交付）提取、23 家机构核销、单 IP 防封控频 | `Scrapling Spider` (`scripts/ingest_spider.py`) 导出 JSONL + `ETLX` 官方 `-file` 载入 | **零件托盘 1**：`data/{销售日}/{id}.db`（27 个分析端点 `endpoint_payload` 与 SQLite 视图）+ 可选 `matchId.md` 人类简报 |
+| **工位 1：全权数据进货局**<br/>`skills/match-scraper` | 赛程索引抓取、28 个采集端点（27 分析 + 1 交付）提取、23 家机构核销、单 IP 防封控频 | `Scrapling Spider` (`scripts/ingest_spider.py`) 导出 JSONL + `ETLX` 官方 `-file` 直接读取 | **零件托盘 1**：`data/{销售日}/{id}.db`（最终七表：球队基本情况/欧指/欧指变盘/亚盘/亚盘变盘/大小球/大小球变盘）+ 可选 `matchId.md` 人类简报 |
 | **工位 2：业务初筛局**<br/>`skills/match-screening` | 方式 1~4 输入统一路由、竞彩编号转换、开球时间先验拦截、全量打标排队 | 纯直读 `meta.md` 赛程索引，**0 外部网络**，严禁按层级淘汰比赛 | **零件托盘 2**：标准推演工单序列 `work_orders: [{matchId, kickoffTime, league, homeTeam, awayTeam, ...}]` |
 | **工位 3：推演大脑总装局**<br/>`skills/deep-analysis` | 纯只读全量结构化数据、去水点概率测算、Dixon-Coles 泊松分布、10 步庄家博弈破译（$\le 1200$ 行刚性封顶） | `evo-semantic` MCP（`browse_semantics` ➔ `resolve_semantics` 双层看数视网膜，无工具调用熔断）<br/>`sports-math` MCP (`devig_oo_epc`, `poisson_dixon_coles`)<br/>`graphify` 知识图谱 | **零件托盘 3**：**四维不可篡改【认知契约卡】** + 纯推演单场结果（胜负平、让球、点概率、比分） |
 | **工位 4：战报交付局**<br/>`skills/recommendation` | Poka-Yoke `Count(契约卡) ≡ N` 门禁、7 列表格拼装、Polymarket 真实链接核验、文末 2 串 1 优选 | 格式校验闸门（绝不折行、字段强校验、链接真实性）、原子化前置写入 memory | **零件托盘 4**：终端交付物（标准 7 列表格 + 文末【🎯 2 串 1 组合推荐】 + memory 审计底账） |

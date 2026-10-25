@@ -3,8 +3,8 @@
 ## 当前数据路径（2026-10-24 起，最高优先）
 
 - **唯一持久化真相**：`data/{销售日}/{matchId}.db`（SQLite）。旧 `raw/{matchId}.json` 已退出 active 分析路径；已迁移的 `3019164` raw 已删除，其余历史 raw 仅作回溯材料保留。
-- **官方采集链**：Scrapling 官方 Spider 适配器导出仓库外临时 JSONL → ETLX 官方 `-file` 载入 `endpoint_payload` → 其余 ETLX 步骤只读 `DB.endpoint_payload` → 数据门禁 `violations=0` → SQLite backup 提升为最终 `.db`。
-- **分析读路径**：EvoOntology 官方 MCP 映射到 SQLite 视图；`v5` 已作为 SQLite 迁移快照激活，映射通过 `validate_semantics` 与真实库只读查询；官方 30 条轨迹进化评估尚未完成，不能宣称 `v5` 已通过官方进化评估。`{matchId}.md` 仅为可选人类看板，机器推演严禁读取。
+- **官方采集链**：Scrapling 官方 Spider 适配器导出仓库外临时 JSONL → ETLX 官方 `-file` 直接读取 JSONL，14 个临时表在内存解析 → 7 条 `INSERT` 写 `data/.build/build.db` 的最终七表 → `GATE_FINAL` → 复制为活动 `.db`。没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库。
+- **分析读路径**：EvoOntology 官方 MCP 映射到 SQLite 最终七表；`v6` 已作为七表迁移快照激活，映射通过 `validate_semantics` 与真实库只读查询；官方 30 条轨迹进化评估尚未完成，不能宣称 `v6` 已通过官方进化评估。`{matchId}.md` 仅为可选人类看板，机器推演严禁读取。
 - **代码边界**：仓库内只允许 `skills/match-scraper/scripts/ingest_spider.py` 与其测试模块；不新增 SQLite writer、包装脚本或业务分析代码。
 
 > **历史废止声明（2026-10-24 18:55，最高优先）**：本文以下任何要求读取 `raw/{matchId}.json`、`{matchId}.md`、`receipt`、`28 个采集端点`，或把 `.md` 当作分析输入/交付物的旧句子，全部作废，仅供历史教训；当前唯一分析输入是 `data/{销售日}/{matchId}.db`（SQLite），`.md` 仅供人类看板。**不是“看情况”，是硬废止。** 其中保留的仅是博弈智慧与错题教训，数据路径一律以本节和 `AGENTS.md` 顶部为准。

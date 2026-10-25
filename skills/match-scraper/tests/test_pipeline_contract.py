@@ -5,20 +5,62 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 PIPELINE = ROOT / "data" / "pipeline.md"
 
+TEMP_NAMES = (
+    "endpoint_payload",
+    "match_meta",
+    "euro_snapshot",
+    "euro_history",
+    "asian_odds",
+    "over_under",
+    "bookmaker_slots",
+    "ah_history",
+    "ou_history",
+    "eu_detail_history",
+    "injury",
+    "lineup",
+    "team_stats",
+    "endpoint_parse_status",
+)
+
+FINAL_NAMES = (
+    "球队基本情况",
+    "欧指",
+    "欧指变盘",
+    "亚盘",
+    "亚盘变盘",
+    "大小球",
+    "大小球变盘",
+)
+
 
 class PipelineContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.text = PIPELINE.read_text(encoding="utf-8")
 
-    def test_all_attach_targets_use_single_working_database(self):
+    def test_direct_build_uses_one_working_database(self):
         targets = re.findall(r"ATTACH '([^']+)' AS DB", self.text)
-        self.assertTrue(targets)
-        self.assertEqual(set(targets), {"data/.staging/build.db"})
+        self.assertEqual(set(targets), {"data/.build/build.db"})
 
-    def test_lineup_step_reads_inline_lineup_obj(self):
-        self.assertIn("name: LINEUP", self.text)
-        self.assertIn("load_sql: land_lineup", self.text)
+    def test_jsonl_is_read_directly_into_temporary_tables(self):
+        self.assertIn("name: BUILD_FINAL", self.text)
+        self.assertIn("read_json_auto('{file}')", self.text)
+        self.assertEqual(self.text.count("CREATE TEMP TABLE "), 14)
+        for name in TEMP_NAMES:
+            self.assertIn(f"CREATE TEMP TABLE {name}", self.text)
+        self.assertEqual(self.text.count('INSERT INTO DB."'), 7)
+        for name in FINAL_NAMES:
+            self.assertIn(f'INSERT INTO DB."{name}"', self.text)
+
+    def test_no_persistent_staging_or_cleanup_steps(self):
+        self.assertNotIn("name: PUBLISH_FINAL", self.text)
+        self.assertNotIn("name: VIEWS", self.text)
+        self.assertNotIn("name: CLEANUP", self.text)
+        self.assertNotIn("VACUUM", self.text.upper())
+        self.assertNotIn('INSERT INTO DB."endpoint_payload"', self.text)
+        self.assertNotIn('INSERT INTO DB."euro_history"', self.text)
+
+    def test_lineup_and_team_stats_read_source_payloads(self):
         for field in (
             "homePlayerList",
             "guestPlayerList",
@@ -28,61 +70,11 @@ class PipelineContractTest(unittest.TestCase):
             "guestFormation",
         ):
             self.assertIn(field, self.text)
-        self.assertIn("trim(player->>'name'", self.text)
+        self.assertIn("lastXgTechStat", self.text)
+        self.assertIn("json_extract(item, '$.home')", self.text)
+        self.assertIn("json_extract(item, '$.away')", self.text)
 
-    def test_team_stats_reads_xg_from_analy_json(self):
-        team_stats = self.text.split("name: TEAM_STATS", 1)[1].split("name: ENDPOINT_STATUS", 1)[0]
-        self.assertIn("endpoint_key = 'analy.json'", team_stats)
-        self.assertIn("lastXgTechStat", team_stats)
-        self.assertIn("json_extract(item, '$.home')", team_stats)
-        self.assertIn("json_extract(item, '$.away')", team_stats)
-        self.assertNotIn("xg_presence", team_stats)
-        self.assertNotIn("no_structured_event_rows", team_stats)
-
-    def test_endpoint_status_counts_lineup_and_reports_analy_json_truthfully(self):
-        status = self.text.split("name: ENDPOINT_STATUS", 1)[1].split("name: BUILD_MANIFEST", 1)[0]
-        self.assertIn("DB.lineup", status)
-        self.assertIn("source_endpoint = 'analy.json'", status)
-        self.assertIn("THEN 'xg rows parsed'", status)
-        self.assertIn("THEN 'xg_parse_failed'", status)
-        self.assertIn("THEN 'xg_not_present'", status)
-
-    def test_match_meta_reads_schedule_index_without_new_payload_endpoint(self):
-        match_meta = self.text.split("name: MATCH_META", 1)[1].split("name: EURO_SNAPSHOT", 1)[0]
-        self.assertIn("read_text('data/{YYYY-MM-DD}/meta.md')", match_meta)
-        self.assertNotIn("DELETE FROM DB.match_meta", match_meta)
-        self.assertIn("trim(f[2]) = (SELECT match_id FROM DB.endpoint_payload LIMIT 1)", match_meta)
-        endpoint_payload = self.text.split("name: ENDPOINT_PAYLOAD", 1)[1].split("name: MATCH_META", 1)[0]
-        self.assertNotIn("match_meta", endpoint_payload)
-        self.assertNotIn("DELETE FROM DB.endpoint_payload", endpoint_payload)
-
-    def test_business_tables_and_views_are_pipeline_owned(self):
-        self.assertIn("name: PUBLISH_FINAL", self.text)
-        self.assertIn("name: VIEWS", self.text)
-        for name in (
-            "球队基本情况", "欧指", "欧指变盘", "亚盘", "亚盘变盘",
-            "大小球", "大小球变盘",
-            "v_euro_snapshot", "v_euro_history", "v_asian_odds",
-            "v_over_under", "v_ah_history", "v_ou_history",
-            "v_eu_detail_history", "v_injury", "v_lineup",
-            "v_team_stats", "v_bookmaker_slots", "v_payload_coverage",
-            "v_analysis_status",
-        ):
-            self.assertIn(name, self.text)
-        self.assertNotIn("name: BUSINESS_TABLES", self.text)
-        self.assertIn("CREATE OR REPLACE VIEW", self.text)
-
-    def test_history_views_are_chronological_and_keep_latest_tie_last(self):
-        for view in (
-            "v_euro_history",
-            "v_ah_history",
-            "v_ou_history",
-            "v_eu_detail_history",
-        ):
-            block = self.text.split(f'CREATE OR REPLACE VIEW "{view}"', 1)[1].split(";", 1)[0]
-            self.assertIn("ORDER BY ts_iso ASC, source_index DESC", block, view)
-
-    def test_euro_detail_has_clear_odds_columns_and_chronological_order(self):
+    def test_euro_detail_has_clear_columns_and_chronological_order(self):
         block = self.text.split('INSERT INTO DB."欧指变盘"', 1)[1].split(";", 1)[0]
         for column in ("主胜赔率", "平局赔率", "客胜赔率"):
             self.assertIn(column, block)
@@ -97,53 +89,25 @@ class PipelineContractTest(unittest.TestCase):
             self.assertIn("WHEN 48 THEN 7", block, table)
             self.assertIn("ORDER BY 4, 7 ASC, 5 DESC", block, table)
 
-    def test_gate_checks_match_meta_identity(self):
-        gate = self.text.split("name: GATE_LIVE", 1)[1]
-        self.assertIn("match_meta_rows", gate)
-        self.assertIn("match_meta_identity", gate)
-        self.assertIn("length(trim(home_team))", gate)
-
-    def test_gate_blocks_synthetic_presence_rows(self):
-        gate = self.text.split("name: GATE_LIVE", 1)[1]
-        self.assertIn("presence_rows", gate)
-        self.assertIn("metric = 'presence'", gate)
-        self.assertIn("lineup_parse_consistency", gate)
-        self.assertIn("lineup_count_matches", gate)
-        self.assertIn("bookmaker_coverage", gate)
-        self.assertIn("COUNT(DISTINCT company_id)", gate)
-        self.assertIn("core_tables_present", gate)
-        self.assertIn("source_endpoint = 'analysis.html'", gate)
-        self.assertIn("payload_chars_mismatches", gate)
-        self.assertIn("raw_hash_lengths", gate)
-        self.assertIn("match_identity", gate)
-        self.assertIn("content_types", gate)
-        self.assertIn("capture_timestamp", gate)
-        self.assertIn("xg_state", gate)
-        self.assertIn("business_tables_present", gate)
-        self.assertIn("read_views_present", gate)
-        self.assertIn("manifest_payload_binding", gate)
-        self.assertIn("main.sqlite_master", gate)
-        self.assertNotIn("DB.v_bookmaker_slots", gate)
-
-
-    def test_publish_final_writes_only_seven_final_tables_in_one_db(self):
-        publish = self.text.split("name: PUBLISH_FINAL", 1)[1].split("name: VIEWS", 1)[0]
-        self.assertEqual(publish.count('INSERT INTO DB."'), 7)
-        self.assertIn("ATTACH 'data/.staging/build.db' AS DB", publish)
-        self.assertNotIn("ATTACH 'data/.staging/final.db' AS FINAL", publish)
-        self.assertNotIn("CREATE OR REPLACE", publish)
-
-    def test_gate_final_checks_seven_tables(self):
+    def test_gate_checks_seven_tables_and_no_views(self):
         gate = self.text.split("name: GATE_FINAL", 1)[1]
-        self.assertIn("final_table_count", gate)
-        self.assertIn("data_status_rows", gate)
-        self.assertIn("bookmaker_status_rows", gate)
-        self.assertIn("euro_detail_rows", gate)
-        self.assertIn("ah_detail_rows", gate)
-        self.assertIn("ou_detail_rows", gate)
-        self.assertIn('DB."欧指变盘"', gate)
-        self.assertIn('DB."亚盘变盘"', gate)
-        self.assertIn('DB."大小球变盘"', gate)
+        for key in (
+            "final_table_total",
+            "final_table_count",
+            "final_view_count",
+            "final_identity_match",
+            "euro_rows",
+            "euro_history_rows",
+            "asian_rows",
+            "asian_history_rows",
+            "ou_rows",
+            "ou_history_rows",
+            "data_status_rows",
+            "bookmaker_status_rows",
+        ):
+            self.assertIn(key, gate)
+        self.assertIn("duckdb_tables()", gate)
+        self.assertIn("duckdb_views()", gate)
 
 
 if __name__ == "__main__":
