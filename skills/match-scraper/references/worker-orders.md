@@ -26,4 +26,4 @@ task:
 - 同一域名单并发；多场按 1–3 场分组串行；组批只做物理调度，不缩减推演总数。
 - Hermes 最多 3 个单场子代理并行；子代理不嵌套；主会话负责验收、串行保存与统一汇总。
 - Worker 五禁：不 `git` 探测、不想盘赔、不改代码、不写临时脚本、不调用 `execute_code` 做抓取/清洗/对账。
-- 进货 Worker 只交付 `data/{销售日}/{matchId}.db` 与证据；Evo 只读入口由主会话在阶段 1 验收后建立，见 `skills/deep-analysis/references/evo-environment.md`。
+- 进货 Worker 只交付 `data/{销售日}/{matchId}.db` 与证据；Evo 只读入口由 `post-review` 在阶段 1 验收后建立并跑探针，见 `skills/post-review/SKILL.md` 的 Evo 环境章节。

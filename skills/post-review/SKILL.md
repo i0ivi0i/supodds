@@ -1,6 +1,6 @@
 ---
 name: post-review
-description: "复盘审计与图谱自愈：独揽赛后真实赛果抓取、标准 7 列表格胜负平+让球双列真实对账、赛前无卡漏推【🚨 红线报警】、Dimitriadis CORP 概率分解与 Graphify 经验图谱闭环自愈。在用户说「复盘」「昨天结果怎么样」「战绩」或每日10:30定时触发时使用。"
+description: "复盘审计与图谱自愈：独揽赛后真实赛果抓取、标准 7 列表格胜负平+让球双列真实对账、赛前无卡漏推【🚨 红线报警】、Dimitriadis CORP 概率分解与 Graphify 经验图谱闭环自愈；并独揽 EvoOntology 环境绑定、赛前建入口、重绑、探针与进化。在用户说「复盘」「昨天结果怎么样」「战绩」或每日10:30定时触发时使用。"
 metadata: { "emoji": "📋" }
 ---
 
@@ -689,6 +689,40 @@ read_file(path="MEMORY.md")
   - 已完成但部分指标不可评分：保留缺失说明，不反复抓数据伪造旧赛前证据；有新可核证据才重新评估；
   - 报告完成但投递失败/不明：查调度器投递记录，有成功回执则补标，没有则恢复报告投递，不重跑统计；
   - 补完同步销掉原日待办，累计按旧贡献替换新贡献；延期不因超过三天变为取消。
+
+## EvoOntology 环境绑定、重绑与探针（唯一 owner）
+
+> 本节是 EvoOntology 环境的唯一 owner。`match-scraper` 只交付 `.db`；`deep-analysis` 只读使用并停线；不再由主会话或 `deep-analysis` 持有环境细节。
+
+### 1. 唯一入口
+- `data/.evo/current.db` 必须是指向当前场次 `data/{销售日}/{matchId}.db` 的 NTFS **硬链接**；不是副本，不是第二个库。
+- 每次最终 `.db` 落盘后重建入口；`cp` 会替换 inode，禁止用复制替代。
+- 只读查询打开入口指向的当前 `.db`，不得在入口路径写业务数据。
+
+### 2. 赛前触发（阶段 1→2）
+- 本场 `.db` 过 `GATE_FINAL` 后，主会话在阶段 1 验收时按本节执行，重建硬链接并跑只读探针；探针未通过，阶段 2 不得开始。
+- 分析师在 Task 开始前只做一致性检查：`project.json` 的 `data_source` 与当前 `data/.evo/current.db` 绝对路径相同；不同则停线交本节，不在旧路径推演。
+
+### 3. 重绑步骤
+1. 确认 `.db` 已过 `GATE_FINAL`，七表与 0 视图无异常。
+2. 删除旧入口并重建硬链接（Windows NTFS）：
+   ```bash
+   mkdir -p data/.evo
+   rm -f data/.evo/current.db
+   cmd.exe /c "mklink /H data\\.evo\\current.db data\\{销售日}\\{matchId}.db"
+   ```
+3. 用官方 `configure_ontology_project(replace=true)` 把 `data_source` 写成当前入口的绝对路径。
+4. 以现有问题重建 workload；运行 `validate_semantics`，再执行至少一次真实只读查询探针。
+5. 只有 `validate_semantics` 通过且探针返回当前场次数据，才允许分析师进入 EvoOntology Task 链。
+
+### 4. 七表或字段变更
+- 七表名与列名不变：重写当前 `.db` 后重建硬链接即可；Evo 下一次只读查询以实际返回为准，若仍读到旧场次，立即重绑并复测。
+- 若 `ALTER`/`DROP`/`RENAME` 七表或列名：同步更新 Mapping 与 Evidence，再跑 `validate_semantics` 和真实探针；`validate_semantics` 只校验本体结构，不校验底层列是否存在。
+
+### 5. 运行态提交边界
+- 可提交：`active.json`、`versions/*`；`evidence.source` 用逻辑库名，不写绝对路径。
+- 不提交：`project.json`、`state.json`、`workload/questions.json`、`tasks/`、`trajectories/`、`reports/`、`visualizations/`、`evolution/`。
+- 不把本机绝对路径、任务轨迹或运行态回执写进可提交的本体版本。
 
 ## 官方 EvoOntology 活体自进化闭环与防噪音立宪
 

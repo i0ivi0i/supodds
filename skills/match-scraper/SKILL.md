@@ -20,7 +20,7 @@ metadata:
 
 > **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用基于 Scrapling 官方 API 的项目适配器 `ingest_spider.py` 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。`{matchId}.md` 仅为可选人类看板。
 >
-> **【EvoOntology 边界】**：EvoOntology 是下游只读层，不属于本工位；本工位只交付 `.db` 与可选人类简报，不配置、不校验、不进化本体。Evo 入口与重绑由主会话负责；读契约见 `skills/deep-analysis/SKILL.md`，环境运维见 `skills/deep-analysis/references/evo-environment.md`。
+> **【EvoOntology 边界】**：EvoOntology 是下游只读层，不属于本工位；本工位只交付 `.db` 与可选人类简报，不配置、不校验、不进化本体。Evo 入口与重绑归 `post-review`；读契约见 `skills/deep-analysis/SKILL.md`，环境与进化见 `skills/post-review/SKILL.md`。
 
 ---
 
@@ -653,7 +653,7 @@ cp data/.build/build.db "data/{销售日}/{matchId}.db"
 rm -rf data/.build
 ```
 
-`data/{销售日}/{matchId}.db` 落盘后，本工位结束；Evo 只读入口由主会话在阶段 1 验收后建立，步骤见 `skills/deep-analysis/references/evo-environment.md`。
+`data/{销售日}/{matchId}.db` 落盘后，本工位结束；Evo 只读入口由 `post-review` 在阶段 1 验收后建立并跑探针，步骤见 `skills/post-review/SKILL.md` 的「EvoOntology 环境绑定、重绑与探针」章节。
 
 外部只读复核至少检查：`sqlite_master` 中只有七张业务表且 0 视图；`球队基本情况` 行数 = 1 + `数据类型` 的阵容/伤停；`欧指`=21；`欧指变盘`、`亚盘变盘`、`大小球变盘` 均非空；`PRAGMA integrity_check=ok`。`球队基本情况` 固定为 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`；行顺序固定为 比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。失败时保留 `data/.build/build.db` 供检查，不动旧最终库。**批量进货只走这条主路径。** JSONL 是仓库外临时交接物，成功后删除。ETLX 若打印 `Error loading .env file` 但 exit 0 且行数正确，属非致命噪声；以 SQLite 只读复核为准，不能只看 ETLX 退出码。
 
