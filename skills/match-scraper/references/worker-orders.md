@@ -1,6 +1,6 @@
 # Worker 工单模板（主会话专用）
 
-> 本文件只供主会话/编排读取。主会话把工单内容**内联**进 `delegate_task` / `invoke_subagent` 的 prompt；**进货 Worker** 不读本文件、不读任何磁盘规范，0 秒执行。**分析师 Worker** 是唯一例外：按模板读取 `MEMORY.md` 与 `skills/deep-analysis/SKILL.md` 两本指定规范，不读其他文档。Worker 的“抓取前零探索、零临时脚本、零盘赔思考”铁律不变；内联工单以 ≤2KB 为压缩目标，但不得删掉分析师必需的上述两项读取。
+> 本文件只供主会话/编排读取。主会话把工单内容**内联**进 `delegate_task` / `invoke_subagent` 的 prompt；**进货 Worker** 不读本文件、不读任何磁盘规范，0 秒执行。**分析师 Worker** 是唯一例外：只读 `skills/deep-analysis/SKILL.md` 一本指定规范；`work_order.method_notes` 与 `prior_contract_card` 由主会话内联注入，不读 `MEMORY.md`，不读其他文档。Worker 的“抓取前零探索、零临时脚本、零盘赔思考”铁律不变；内联工单以 ≤2KB 为压缩目标，但不得删掉分析师必需的这项读取。
 
 ## 1. 标准进货 Worker（Data Ingest Worker）
 
@@ -13,7 +13,7 @@ task:
 
 ```yaml
 task:
-  goal: “深度分析 [{联赛}] {主队} vs {客队}（ID: {matchId}）。本批共 N 场，不写入 memory，只回传含 memory 摘要的结构化结果。必须首先读取 MEMORY.md 与 skills/deep-analysis/SKILL.md，严格按该 skill 的 EvoOntology 任务链、看数规则、10 步推演与认知契约卡执行；只读 data/{销售日}/{matchId}.db，严禁读 {matchId}.md、严禁网络抓取、严禁手搓临时脚本。结果与执行证据回传，不自行对外发布；Polymarket 链接由交付工位另行补挂。”
+  goal: “深度分析 [{联赛}] {主队} vs {客队}（ID: {matchId}）。本批共 N 场，不写入 memory，只回传 `announce`（含 `comprehensive_assessment` 与 `memory_summary`）。必须首先读取 `skills/deep-analysis/SKILL.md`；`method_notes` 与 `prior_contract_card` 由主会话内联注入，不读 `MEMORY.md`，严格按该 skill 的 EvoOntology 任务链、看数规则、10 步推演与认知契约卡执行；只读 data/{销售日}/{matchId}.db，严禁读 {matchId}.md、严禁网络抓取、严禁手搓临时脚本。结果与执行证据回传，不自行对外发布；Polymarket 链接由交付工位另行补挂。”
 ```
 
 ## 3. 验收纪律
