@@ -677,7 +677,7 @@ read_file(path="MEMORY.md")
   - **看数必经 EvoOntology 视网膜**：大模型严禁直接使用 `read_file` 裸视海量原始长文本，必须且只能依托 EvoOntology 官方 MCP 工具（`browse_semantics` ➔ `resolve_ontology_task`）核销 23 家并按 mapping 路径全量提取微观活水数据；
   - 输入原「认知契约卡」与新批次，由大模型通盘复核，驱动状态机输出【维持原判】、【微调修正】或【物理熔断】；
   - 若出现网络抓取失败、字段缺失或时点冲突，置顶报警并记录待办，绝不伪造复核记录。
-- **执行分工**：刷新数据走 `skills/match-scraper`；复核推演走 `skills/deep-analysis` 步骤 2 的“临盘决战复核”；本技能只负责巡检触发、状态机与记录，不另写抓取脚本。
+- **执行分工**：刷新数据走 `skills/match-scraper`；复核推演走 `skills/deep-analysis` 的“方法校准与临盘复核（进入十步前）”；本技能只负责巡检触发、状态机与记录，不另写抓取脚本。
 
 #### ③ 赛后复盘补漏清单
 

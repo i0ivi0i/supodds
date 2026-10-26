@@ -20,7 +20,7 @@ metadata:
 
 > **【当前数据路径（2026-10-25 起，最高优先）】**：唯一持久化真相是 `data/{销售日}/{matchId}.db` 的**最终七表**。本工位用基于 Scrapling 官方 API 的项目适配器 `ingest_spider.py` 抓取并导出仓库外临时 JSONL；ETLX 直接读取 JSONL，在 DuckDB 临时表中解析，只写七张最终表。**没有 staging 物理表、没有视图、没有 ETLX 之后的 Python 清理、没有第二个库**。`{matchId}.md` 仅为可选人类看板。
 >
-> **【EvoOntology 边界】**：EvoOntology 是下游只读层，不属于本工位；本工位只交付 `.db` 与可选人类简报，不配置、不校验、不进化本体。Evo 入口与重绑归 `post-review`；读契约见 `skills/deep-analysis/SKILL.md`，环境与进化见 `skills/post-review/SKILL.md`。
+> **【EvoOntology 边界】**：EvoOntology 是下游只读层，不属于本工位；本工位只交付 `.db` 与可选人类简报，不配置、不校验、不进化本体。Evo 入口与重绑归复盘工位；读契约归下游分析工位，环境与进化归复盘工位。
 
 ---
 
@@ -514,16 +514,16 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
 
 ### 2.2 搬运工 Worker 的 Spider 闭环作业规范
 
-1. **两段式闭环**：Worker 接单后 0 秒运行 `py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {销售日} --home {主队} --away {客队} --output <仓库外临时.jsonl>` 导出 JSONL；再按 5.1 建空七表库并执行 ETLX 直接装配 + `GATE_FINAL`，通过后提升 `.db`；不需要先建 MCP 会话；主会话工单模板见 `skills/match-scraper/references/worker-orders.md`。
+1. **两段式闭环**：Worker 接单后 0 秒运行 `py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {销售日} --home {主队} --away {客队} --output <仓库外临时.jsonl>` 导出 JSONL；再按 5.1 建空七表库并执行 ETLX 直接装配 + `GATE_FINAL`，通过后提升 `.db`；不需要先建 MCP 会话；主会话进货工单模板见 `skills/match-scraper/references/worker-orders.md`。
 2. **选择器与编码**：全部由 `config/endpoints.json` 提供，21 张变盘流水表 `css_selector="#odds2 table"`、两张全景总表 `css_selector="#table_odds"`；Worker 不得手写选择器；
 3. **断路升阶与阻断**：HTTP 失败可用 `--browser-fallback` 升阶 StealthyFetcher；若升阶后仍失败，脚本不写 JSONL、exit 1 并打印具体端点错误，Worker 如实回传，不把失败写成“WAF”或成功。
 
 ### 2.3 交付状态与批次纪律
 
 - **启动**：主会话发出工单后推送 `⚡ 已启动…`；不把已启动说成已完成。
-- **过验**：源数据过 `GATE_FINAL` 后推送 `🛡️ 数据已就绪，唤醒分析师…`；未过验不得唤醒。
+- **过验**：源数据过 `GATE_FINAL` 后推送 `🛡️ 数据已就绪`，交主会话路由；未过验不得放行。
 - **完成**：整批回传 `.db` 与证据后推送 `✅ …完成` + 摘要；数据异常置顶报警。
-- **单场与多场同一纪律**：单场也必须“搬运工 → 过验 → 分析师”两段隔离，主会话不兼职；多场按 1–3 场分组串行，组批只是物理调度，不是缩减推演总数。
+- **单场与多场同一纪律**：单场也必须“搬运工 → 过验 → 主会话路由”两段隔离，主会话不兼职；多场按 1–3 场分组串行，组批只是物理调度。
 - **唯一单写者**：Worker 只回传，不写 memory；主会话验收后才写。
 - **调度**：主会话是 Central Scheduler；同一域名单并发、场次互斥、不轮询；最多 3 个单场子代理，子代理不嵌套；Worker 五禁见 `references/worker-orders.md`。
 
@@ -623,7 +623,7 @@ Feed 以 `$` 分为前后两段：前段是联赛字典（`#` 分隔）；后段
 
 ## 第五工段：模式二·单场【推演源数据】采集与 28 端点装配
 
-底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料经 ETLX 投影后的最终七表 SSOT；27 个端点回执、哈希与采集时间留在抓取层 JSONL，不进入最终库。数据工位只交付 `.db` 与可选人类简报；推演看数规则归 `skills/deep-analysis/SKILL.md`，本工位不配置、不校验 EvoOntology。`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
+底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料经 ETLX 投影后的最终七表 SSOT；27 个端点回执、哈希与采集时间留在抓取层 JSONL，不进入最终库。数据工位只交付 `.db` 与可选人类简报；推演看数规则归下游分析工位，本工位不配置、不校验 EvoOntology。`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
 
 ### 5.1 Scrapling 官方 API 进货入口：项目适配器 Spider 主路径，MCP 降级
 

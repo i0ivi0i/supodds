@@ -108,7 +108,7 @@
 - **`recommendation`**：交付与封存；不改首选/次选、不缩表、不编链接。
 - **`post-review`**：真实对账、心跳巡检、经验回流、EvoOntology 环境（赛前建入口、重绑、探针）与进化；不脑补、不无卡冒领。
 
-**调度纪律**：主会话是 Central Scheduler；同一域名单并发、场次互斥、不轮询；最多三个单场子代理并行，子代理不再嵌套；Worker 只回传，不写 memory、不改代码、不做 Git、不写临时脚本。工单细节在 `skills/match-scraper/references/worker-orders.md`。
+**调度纪律**：主会话是 Central Scheduler；同一域名单并发、场次互斥、不轮询；最多三个单场子代理并行，子代理不再嵌套；Worker 只回传，不写 memory、不改代码、不做 Git、不写临时脚本。进货工单细节在 `skills/match-scraper/references/worker-orders.md`；分析员工单按 `skills/deep-analysis/SKILL.md` 的接单门与读取门执行；交付/复盘工单各归其技能。
 
 ---
 

@@ -90,7 +90,7 @@ flowchart LR
         D2["标准推演工单序列<br/>[{matchId, kickoffTime, ...}]"]
     end
     subgraph W3 ["工位3: 推演大脑 (deep-analysis)"]
-        S3["纯逻辑推演 (≤1200行)<br/>EvoOntology视网膜 + Graphify"]
+        S3["纯逻辑推演 (主文件 ≤500 行)<br/>EvoOntology视网膜 + Graphify"]
     end
     subgraph T3 ["零件托盘 3"]
         D3["四维认知契约卡<br/>+ 胜负平/让球/去水点概率"]
@@ -118,7 +118,7 @@ flowchart LR
 skills/
 ├── match-scraper/      # 工位 1：全权数据进货局 (Scrapling Spider 官方原生并发)
 ├── match-screening/    # 工位 2：业务初筛局 (4 种输入路由 + 开球拦截 + 标准工单)
-├── deep-analysis/      # 工位 3：推演大脑总装局 (纯逻辑推演 ≤1200行 + 四维认知契约卡)
+├── deep-analysis/      # 工位 3：推演大脑总装局 (主文件 ≤500 行 + 3 本 references + 四维认知契约卡)
 ├── recommendation/     # 工位 4：战报交付局 (Poka-Yoke 门禁 + 标准 7 列表格 + 2 串 1)
 └── post-review/        # 工位 5：复盘审计局 (双列 1:1 真实对账 + 认知图谱自愈)
 ```
@@ -127,7 +127,7 @@ skills/
 | :--- | :--- | :--- | :--- |
 | **工位 1：全权数据进货局**<br/>`skills/match-scraper` | 赛程索引抓取、28 个采集端点（27 分析 + 1 交付）提取、23 家机构核销、单 IP 防封控频 | `Scrapling Spider` (`scripts/ingest_spider.py`) 导出 JSONL + `ETLX` 官方 `-file` 直接读取 | **零件托盘 1**：`data/{销售日}/{id}.db`（最终七表：球队基本情况/欧指/欧指变盘/亚盘/亚盘变盘/大小球/大小球变盘）+ 可选 `matchId.md` 人类简报 |
 | **工位 2：业务初筛局**<br/>`skills/match-screening` | 方式 1~4 输入统一路由、竞彩编号转换、开球时间先验拦截、全量打标排队 | 纯直读 `meta.md` 赛程索引，**0 外部网络**，严禁按层级淘汰比赛 | **零件托盘 2**：标准推演工单序列 `work_orders: [{matchId, kickoffTime, league, homeTeam, awayTeam, ...}]` |
-| **工位 3：推演大脑总装局**<br/>`skills/deep-analysis` | 纯只读全量结构化数据、去水点概率测算、Dixon-Coles 泊松分布、10 步庄家博弈破译（$\le 1200$ 行刚性封顶） | `evo-semantic` MCP（`browse_semantics` ➔ `resolve_semantics` 双层看数视网膜，无工具调用熔断）<br/>`sports-math` MCP (`devig_oo_epc`, `poisson_dixon_coles`)<br/>`graphify` 知识图谱 | **零件托盘 3**：**四维不可篡改【认知契约卡】** + 纯推演单场结果（胜负平、让球、点概率、比分） |
+| **工位 3：推演大脑总装局**<br/>`skills/deep-analysis` | 纯只读全量结构化数据、去水点概率测算、Dixon-Coles 泊松分布、10 步庄家博弈破译（主文件 ≤500 行；操作分册按需加载） | `evoontology` MCP（`start_ontology_task` ➔ `browse_semantics` ➔ 5 批 `resolve_ontology_task` ➔ `execute_ontology_query` ➔ `finish_ontology_task`；无工具调用熔断）<br/>`sports-math` MCP (`devig_oo_epc`, `poisson_dixon_coles`)<br/>`graphify` 知识图谱 | **零件托盘 3**：**四维不可篡改【认知契约卡】** + 纯推演单场结果（胜负平、让球、点概率、比分） |
 | **工位 4：战报交付局**<br/>`skills/recommendation` | Poka-Yoke `Count(契约卡) ≡ N` 门禁、7 列表格拼装、Polymarket 真实链接核验、文末 2 串 1 优选 | 格式校验闸门（绝不折行、字段强校验、链接真实性）、原子化前置写入 memory | **零件托盘 4**：终端交付物（标准 7 列表格 + 文末【🎯 2 串 1 组合推荐】 + memory 审计底账） |
 | **工位 5：复盘审计局**<br/>`skills/post-review` | 真实赛果抓取、1:1 胜负平+让球双列真实对账、赛前无卡漏推红线报警、战法库反思进化 | `graphify` 错题反思导览 + 长期记忆库 (`MEMORY.md`) | **零件托盘 5**：真实完场对账单（含 ✅/❌/走水） + `LESSONS.md` 经验图谱自愈 |
 
@@ -144,7 +144,7 @@ flowchart TD
     Z_GET["调度 Scrapling make_request(bf_jc.txt)<br/>秒级解析并落盘 meta.md 与 memory (< 2秒)"]
     P1["【阶段 1：蜂群纯物理进货】<br/>派发专职搬运工 Subagent (Data Ingest Worker)<br/>ingest_spider.py 一次抓取 28 个采集端点并导出 JSONL<br/>27 个分析端点经 ETLX 入库，Polymarket 仅交付<br/>落盘 {id}.db（简报可选）"]
     P1_GATE{"双重质检门禁核销<br/>23家做市商 + 27端点分析Schema"}
-    P2["【阶段 2：纯逻辑首席分析师】<br/>唤醒 Chief Match Analyst<br/>通读 deep-analysis 心法 (≤1200行)<br/>EvoOntology 视网膜全量解析 + Graphify 检索<br/>sports-math 算法去水 + 10 步深度推演"]
+    P2["【阶段 2：纯逻辑首席分析师】<br/>唤醒 Chief Match Analyst<br/>读 deep-analysis 主文件 + 当前阶段 reference<br/>EvoOntology 视网膜全量解析 + Graphify 检索<br/>sports-math 算法去水 + 10 步深度推演"]
     OUT["【阶段 3：交付与单写原子封存】<br/>写入 memory/{销售日}.md 深度分析摘要与契约卡<br/>交付标准 7 列表格 (含 Polymarket 真实链接)"]
 
     Z --> Z_NO
@@ -255,7 +255,7 @@ flowchart TD
 ├── memory/                  # 每日记忆流水线唯一单写原子落盘
 │   └── YYYY-MM-DD.md        # 每日战报存盘与认知契约卡
 ├── skills/                  # 五大高内聚生产车间工位
-│   ├── deep-analysis/       # 工位 3：推演大脑总装局 (SKILL.md ≤ 1200行)
+│   ├── deep-analysis/       # 工位 3：推演大脑总装局 (SKILL.md ≤500 行 + references)
 │   ├── match-scraper/       # 工位 1：全权数据进货局
 │   ├── match-screening/     # 工位 2：业务初筛局
 │   ├── post-review/         # 工位 5：复盘审计局
