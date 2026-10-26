@@ -157,7 +157,7 @@ Keep two fixtures: a header-only page that must fail, and a populated page that 
 
 | This guide | Football implementation |
 | :--- | :--- |
-| Named-source completeness (28 endpoints, 23 bookmaker slots) | `load_contract()` and `_validate_contract()` in `scripts/ingest_spider.py`; `config/endpoints.json`; `config/datasources.json`; `tests/test_config_manifest.py` |
+| Named-source completeness (27 endpoints, 22 bookmaker slots) | `load_contract()` and `_validate_contract()` in `scripts/ingest_spider.py`; `config/endpoints.json`; `config/datasources.json`; `tests/test_config_manifest.py` |
 | Header-only table rejection | `_table_data_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_header_only_table_fails_even_with_pipe_delimiters` |
 | Flattened mobile Markdown streams | `_mobile_stream_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_jammed_mobile_stream_rows_pass` |
 | Duplicate odds rows | `_duplicate_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_duplicate_table_rows_fail` |
