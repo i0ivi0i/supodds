@@ -70,9 +70,9 @@ class IngestContractTest(unittest.TestCase):
     def setUpClass(cls):
         cls.contract = load_contract(ROOT)
 
-    def test_contract_loads_28_endpoints_and_23_slots(self):
-        self.assertEqual(len(self.contract.endpoints), 28)
-        self.assertEqual(len(self.contract.bookmakers), 23)
+    def test_contract_loads_27_endpoints_and_22_slots(self):
+        self.assertEqual(len(self.contract.endpoints), 27)
+        self.assertEqual(len(self.contract.bookmakers), 22)
         self.assertEqual(len(self.contract.euro_cids), 21)
         self.assertEqual(len(self.contract.change_cids), 7)
 
@@ -128,7 +128,6 @@ class IngestContractTest(unittest.TestCase):
         self.assertIn("entity_mismatch", result.errors)
 
     def test_legal_empty_states(self):
-        self.assertEqual(assess_payload(self.contract, "polymarket.json", "[]").state, "not_offered")
         self.assertEqual(assess_payload(self.contract, "analy.json", '{"had": null}').state, "not_offered")
         self.assertEqual(assess_payload(self.contract, "eu_42.html", "").state, "not_offered")
 
@@ -215,7 +214,6 @@ class IngestContractTest(unittest.TestCase):
                 "analysis.html": '<div id="porlet_8">阵容</div>',
                 "odds.html": '<div id="analy_sbAllOdds">波胆</div>',
                 "analy.json": '{"had": null}',
-                "polymarket.json": "[]",
             }
         )
         return payloads

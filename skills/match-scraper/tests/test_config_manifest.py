@@ -23,14 +23,14 @@ class ContractDataTest(unittest.TestCase):
         cls.primary = cls.datasources["datasources"]["primary_odds"]
         cls.roster = cls.primary["tracked_bookmakers"]
 
-    def test_endpoint_manifest_has_28_unique_keys(self):
+    def test_endpoint_manifest_has_27_unique_keys(self):
         endpoints = self.endpoints["endpoints"]
         keys = [entry["key"] for entry in endpoints]
-        self.assertEqual(len(endpoints), 28)
-        self.assertEqual(len(set(keys)), 28)
+        self.assertEqual(len(endpoints), 27)
+        self.assertEqual(len(set(keys)), 27)
         self.assertEqual(
             Counter(entry["group"] for entry in endpoints),
-            Counter({"core": 4, "ah": 7, "ou": 7, "eu": 7, "polymarket": 1, "panorama": 2}),
+            Counter({"core": 4, "ah": 7, "ou": 7, "eu": 7, "panorama": 2}),
         )
         for entry in endpoints:
             self.assertTrue(entry["required"], entry["key"])
@@ -44,10 +44,10 @@ class ContractDataTest(unittest.TestCase):
             for cid in CHANGE_CIDS:
                 self.assertIn(f"{group}_{cid}.html", keys)
 
-    def test_roster_has_23_slots_and_exact_cid_sets(self):
-        self.assertEqual(len(self.roster), 23)
+    def test_roster_has_22_slots_and_exact_cid_sets(self):
+        self.assertEqual(len(self.roster), 22)
         names = [entry["official_name"] for entry in self.roster]
-        self.assertEqual(len(set(names)), 23)
+        self.assertEqual(len(set(names)), 22)
         euro = [entry["euro_cid"] for entry in self.roster if entry["euro_cid"] is not None]
         change = [entry["change_cid"] for entry in self.roster if entry["change_cid"] is not None]
         self.assertEqual(len(euro), 21)
@@ -57,12 +57,10 @@ class ContractDataTest(unittest.TestCase):
         self.assertEqual(len(set(change)), 7)
         self.assertEqual(set(change), CHANGE_CIDS)
 
-    def test_188bet_and_polymarket_are_special_cases(self):
+    def test_188bet_is_special_case(self):
         by_name = {entry["official_name"]: entry for entry in self.roster}
         self.assertIsNone(by_name["188Bet"]["euro_cid"])
         self.assertEqual(by_name["188Bet"]["change_cid"], 42)
-        self.assertIsNone(by_name["Polymarket"]["euro_cid"])
-        self.assertIsNone(by_name["Polymarket"]["change_cid"])
 
     def test_endpoint_semantics_match_the_real_pages(self):
         by_key = {entry["key"]: entry for entry in self.endpoints["endpoints"]}

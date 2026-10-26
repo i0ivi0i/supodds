@@ -42,8 +42,7 @@
         { "official_name": "Unibet", "aliases": ["优胜客"], "euro_cid": 386, "change_cid": null, "required_endpoints": ["1x2d.js"], "no_open_rule": "not_offered if absent from 1x2d.js", "role": "学术论文样本 / 北欧权威" },
         { "official_name": "Paddy Power", "aliases": ["PaddyPower"], "euro_cid": 826, "change_cid": null, "required_endpoints": ["1x2d.js"], "no_open_rule": "not_offered if absent from 1x2d.js", "role": "学术论文样本 / 爱尔兰巨头" },
         { "official_name": "10Bet", "aliases": ["10BET"], "euro_cid": 16, "change_cid": null, "required_endpoints": ["1x2d.js"], "no_open_rule": "not_offered if absent from 1x2d.js", "role": "学术论文样本 / 辅助样本" },
-        { "official_name": "中国体彩", "aliases": ["Lottery Official", "体彩", "竞彩"], "euro_cid": 1129, "change_cid": null, "required_endpoints": ["1x2d.js"], "no_open_rule": "not_offered if cid 1129 is absent from 1x2d.js; HAD/HHAD require a separate verified source", "role": "终端履约 / 开售核验" },
-        { "official_name": "Polymarket", "aliases": [], "euro_cid": null, "change_cid": null, "required_endpoints": ["polymarket.json"], "no_open_rule": "[] is not_offered", "role": "链上预测市场" }
+        { "official_name": "中国体彩", "aliases": ["Lottery Official", "体彩", "竞彩"], "euro_cid": 1129, "change_cid": null, "required_endpoints": ["1x2d.js"], "no_open_rule": "not_offered if cid 1129 is absent from 1x2d.js; HAD/HHAD require a separate verified source", "role": "终端履约 / 开售核验" }
       ]
     },
     "injuries_and_lineups": {

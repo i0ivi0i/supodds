@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "description": "单场 28 个采集端点唯一机器契约（27 个分析端点 + 1 个 Polymarket 交付端点；Polymarket 不入分析库）",
+  "description": "单场 27 个分析采集端点唯一机器契约（不含阶段 3 交付渠道）",
   "endpoints": [
     {
       "key": "1x2d.js",
@@ -327,19 +327,6 @@
       "required": true,
       "empty_state": "not_offered_with_evidence",
       "gate": "table_core"
-    },
-    {
-      "key": "polymarket.json",
-      "group": "polymarket",
-      "tier": 1,
-      "aggregation_source": "polymarket_gamma_clob",
-      "url": "https://gamma-api.polymarket.com/events?slug={polymarket_slug}",
-      "encoding": "utf-8",
-      "extraction_type": "text",
-      "css_selector": null,
-      "required": true,
-      "empty_state": "not_offered",
-      "gate": "polymarket"
     },
     {
       "key": "asian_odds.html",

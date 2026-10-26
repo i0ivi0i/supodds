@@ -1,6 +1,6 @@
 ---
 name: match-scraper
-description: "马斯克超级工厂工位 1（全权数据进货局）：垂直内嵌 Scrapling 0.5 官方全套武器库（HTTP协议流、无头浏览器自动化、防封绕盾、三路流式分拣、选择器下推、Shadow DOM、Spider 架构与高级解析导航）与球探体育(titan007)法定 28 个采集端点装配规约（27 个分析端点 + 1 个 Polymarket 交付端点；含亚盘与大小球全景初即总表），独揽单 IP 防封控频与 23 家做市商布尔核销，出厂交付标准零件托盘 1（SQLite {id}.db 唯一持久化存证与可选人类简报）。在用户说「抓取赛程」「获取今日比赛」「进货」「拉取推演源数据」或阶段零、阶段一时使用。"
+description: "马斯克超级工厂工位 1（全权数据进货局）：垂直内嵌 Scrapling 0.5 官方全套武器库（HTTP协议流、无头浏览器自动化、防封绕盾、三路流式分拣、选择器下推、Shadow DOM、Spider 架构与高级解析导航）与球探体育(titan007)法定 27 个分析采集端点装配规约（含亚盘与大小球全景初即总表），独揽单 IP 防封控频与 22 家做市商布尔核销，出厂交付标准零件托盘 1（SQLite {id}.db 唯一持久化存证与可选人类简报）。在用户说「抓取赛程」「获取今日比赛」「进货」「拉取推演源数据」或阶段零、阶段一时使用。"
 version: "0.5"
 license: Complete terms in LICENSE.txt
 metadata:
@@ -39,16 +39,15 @@ metadata:
 - [第三工段：工厂与工位铁律及官方四大原生护栏](#第三工段工厂与工位铁律及官方四大原生护栏)
   - [3.1 核心铁律与安全红线（全语种零临时脚本与零磁盘中转）](#31-核心铁律与安全红线全语种零临时脚本与零磁盘中转)
   - [3.2 自适应解析拓扑自愈 vs 严禁缓存活水赔率数值](#32-自适应解析拓扑自愈-vs-严禁缓存活水赔率数值)
-  - [3.3 官方四大原生护栏（Anti-Mismatch、Anti-Omission 23家、In-Flight Selector Pushdown、Dynamic DOM Escalation）](#33-官方四大原生护栏anti-mismatchanti-omission-23家in-flight-selector-pushdowndynamic-dom-escalation)
+  - [3.3 官方四大原生护栏（Anti-Mismatch、Anti-Omission 22家、In-Flight Selector Pushdown、Dynamic DOM Escalation）](#33-官方四大原生护栏anti-mismatchanti-omission-22家in-flight-selector-pushdowndynamic-dom-escalation)
 - [第四工段：模式一·赛程抓取与索引极速初始化（第 0 步极速原子落盘）](#第四工段模式一赛程抓取与索引极速初始化第-0-步极速原子落盘)
   - [4.1 协议流直取球探竞足页（Level 1 纯 HTTP 极速通道）](#41-协议流直取球探竞足页level-1-纯-http-极速通道)
   - [4.2 直接解析 Markdown 表格行并提取实体](#42-直接解析-markdown-表格行并提取实体)
   - [4.3 原子落盘 meta.md 与追加 memory.md](#43-原子落盘-metamd-与追加-memorymd)
-- [第五工段：模式二·单场【推演源数据】采集与 28 端点装配](#第五工段模式二单场推演源数据采集与-28-端点装配)
+- [第五工段：模式二·单场【推演源数据】采集与 27 端点装配](#第五工段模式二单场推演源数据采集与-27-端点装配)
   - [5.1 Scrapling 官方进货入口：Spider 主路径，MCP 降级](#51-scrapling-官方进货入口spider-主路径mcp-降级)
-  - [5.2 单场法定 28 个底层端点全景映射表（含亚盘/大小全景总表与保真解码）](#52-单场法定-28-个底层端点全景映射表含亚盘大小全景总表与保真解码)
-  - [5.3 欧洲指数 23 家做市商法定名单与提取契约](#53-欧洲指数-23-家做市商法定名单与提取契约)
-  - [5.4 Polymarket 链上预测市场进货标准（Polymarket 端点）](#54-polymarket-链上预测市场进货标准polymarket-端点)
+  - [5.2 单场法定 27 个底层端点全景映射表（含亚盘/大小全景总表与保真解码）](#52-单场法定-27-个底层端点全景映射表含亚盘大小全景总表与保真解码)
+  - [5.3 欧洲指数 22 家做市商法定名单与提取契约](#53-欧洲指数-22-家做市商法定名单与提取契约)
 - [第六工段：Poka-Yoke 双重物理质检门禁与标准零件托盘 1 交付](#第六工段poka-yoke-双重物理质检门禁与标准零件托盘-1-交付)
   - [6.1 双重物理质检门禁（SQLite 七表满配 vs 人类简报黄金装配）](#61-双重物理质检门禁sqlite-七表满配-vs-人类简报黄金装配)
   - [6.2 出厂交付标准零件托盘 1（模式一 & 模式二交付契约）](#62-出厂交付标准零件托盘-1模式一-模式二交付契约)
@@ -60,7 +59,7 @@ metadata:
   - [7.5 开箱即用闭环工单规范与双轨端点任务字典](#75-开箱即用闭环工单规范与双轨端点任务字典)
 - [第八工段：异常熔断与主备外部数据源矩阵](#第八工段异常熔断与主备外部数据源矩阵)
   - [8.1 异常停线熔断机制](#81-异常停线熔断机制)
-  - [8.2 多数据源协同矩阵（titan007, FPL, Big Balls, Football-Data, Polymarket）](#82-多数据源协同矩阵titan007-fpl-big-balls-football-data-polymarket)
+  - [8.2 多数据源协同矩阵（titan007, FPL, Big Balls, Football-Data）](#82-多数据源协同矩阵titan007-fpl-big-balls-football-data)
   - [8.3 赛后复盘赛果极速提取通道（赋能 post-review 的 Scrapling 选择器下推通道）](#83-赛后复盘赛果极速提取通道赋能-post-review-的-scrapling-选择器下推通道)
 
 ---
@@ -474,7 +473,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
   - `references/migrating_from_beautifulsoup.md` - 从 BeautifulSoup 迁移至 Scrapling 极速解析器的 API 映射字典
 
 #### 1.5.2 三维一体协同沟通关系
-1. **`SKILL.md`（生产总控中枢）**：承接总控台调度工单，将球探 28 端点业务需求与 Scrapling 规范焊合；
+1. **`SKILL.md`（生产总控中枢）**：承接总控台调度工单，将球探 27 端点业务需求与 Scrapling 规范焊合；
 2. **`references/`（深度知识外脑）**：为 Agent 在遭遇冷门加密、Shadow DOM 或特殊反爬时提供 18 篇即查即用官方方案；
 3. **`scripts/ingest_spider.py`（唯一生产脚本）**：Scrapling Spider 业务适配器与官方 `ItemList.to_jsonl()` 导出入口。
 
@@ -504,7 +503,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
 | MCP 工具名称 | 核心参数规范 | 适用业务场景与分工 |
 | :--- | :--- | :--- |
 | `open_request_session` | `session_id`: 字符串<br/>`impersonate`: `"chrome"`<br/>`stealthy_headers`: `true` | **开启全真长连接**：模拟 Chrome TLS/JA3 指纹与真实 Client Hints 标头，复用底座 TCP 连接池，消灭爬虫特征。 |
-| `session_make_request` | `session_id`: 对应会话<br/>`url`: 目标端点<br/>`css_selector`: 选择器<br/>`extraction_type`: `"text"` \| `"html"` \| `"markdown"`<br/>`main_content_only`: 布尔值 | **分流流式采掘**：复用同一个会话对 28 端点执行三路分流提取，单场比赛一气呵成。 |
+| `session_make_request` | `session_id`: 对应会话<br/>`url`: 目标端点<br/>`css_selector`: 选择器<br/>`extraction_type`: `"text"` \| `"html"` \| `"markdown"`<br/>`main_content_only`: 布尔值 | **分流流式采掘**：复用同一个会话对 27 端点执行三路分流提取，单场比赛一气呵成。 |
 | `close_session` | `session_id`: 目标会话 | **会话终结释放**：文件落盘后强制显式关闭连接，释放网络句柄与系统内存，杜绝空闲孤儿会话。 |
 | `make_request` | `url`, `extraction_type`, `impersonate`, `stealthy_headers` | **极速一次性请求**：用于模式一官方赛程 Feed（`xml/bf_jc.txt`）秒级拉取解析；`index.aspx` 仅人类浏览入口，不作数据源。 |
 | `browser_fetch` | `url`, `solve_cloudflare=true`, `network_idle=true`, `pierce_shadow=true` | **升阶破盾与动态等待**：遇 403/503 或空骨架（`<tr>` 数量 $< 2$）时自动升阶接管，等待网络静默或穿透人机挑战盾。 |
@@ -557,7 +556,7 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
   - **拦截质询盾与残缺流**：严禁将 403/503 或 Cloudflare 挑战盾页面当作正常数据接收，遇反爬盾自动升阶 `stealthy_fetch(solve_cloudflare=true)`；`1x2d.js` 必须包含法定 21 家欧指 cid 原始行并能完整反序列化，杜绝因网络中断截断只收到残缺报文！
 - **二不：绝不写入假数据（Anti-Fake-Data Guardrail）**：
   - **存证 100% 物理真实（SQLite SSOT Invariant）**：`data/{销售日}/{matchId}.db` 的最终七表必须 100% 由 ETLX 从官方 JSONL 的真实活水响应直接投影；JSONL 必须来自 Scrapling Spider 的网络响应，严禁任何 Agent 手工编造、硬编码 mock 数据或篡改报文；
-  - **未开盘严禁脑补（Zero Hallucinated Odds）**：凡机构未开盘（如香港马会次级联赛未开亚盘、体彩深盘未开单关）或 Polymarket 未开设当场预测合约，**必须且只能**如实标注 `[官方未开盘]`！绝对严禁在后台或前端硬编码伪造赔率（如伪造“60.5¢”挂单、伪造 Crown 波胆或伪造伤停）。宁可报缺报阻，绝不造假脑补！
+  - **未开盘严禁脑补（Zero Hallucinated Odds）**：凡机构未开盘（如香港马会次级联赛未开亚盘、体彩深盘未开单关），**必须且只能**如实标注 `[官方未开盘]`！绝对严禁在后台或前端硬编码伪造赔率（如伪造 Crown 波胆或伪造伤停）。宁可报缺报阻，绝不造假脑补！
   - **真实哈希反作弊（SQLite Anti-Tampering）**：JSONL 中每条端点记录必须携带 `chars`、`sha256`、`raw_sha256` 且与内容长度/哈希一致；最终 `球队基本情况` 只保留比赛信息、阵容、伤停，`数据状态`/`数据指纹`/`采集时间` 留在抓取层 JSONL，虚报立即熔断报警。
 - **三不：数据绝不能放错（Anti-Misplacement & Strict Mapping Guardrail）**：
   - **做市商 ID 字典级刚性锁死**：以 21 家欧指 cid 与 7 家亚盘/大小球 cid 两套字典构建 Hash Map 进行常数级精确提取，`parts[0]` 为机构 ID (`cid`)，**绝对严禁错用 `parts[1]`**！绝不把平博的数据填到皇冠，绝不把澳彩的水位错放进马会；188Bet 只有亚盘 cid=42，欧指无 cid，42=18Bet 严禁冒充；
@@ -568,19 +567,19 @@ Recorded responses belong to the whole browser session. `search()` and `get()` r
   - **初即列与变盘时序绝不错位**：战区三·五初盘列严格对应最早开盘记录，即盘列对应最新时序，严禁即盘填入初盘列；战区四 21 张变盘流水表进货时 100% 保持源端原生态镜像直出，严禁手工调换行序或移花接木插拔初盘，严禁人为截断；推演分析时统一依据时间戳升序排序律（`Sort by Timestamp ASC`）自适应梳理时钟因果！
   - **跨比赛绝对隔离**：简报 `{matchId}.md` 和底层 `data/{销售日}/{matchId}.db` 必须经过 `matchId` 一致性核验，严禁比赛 A 的表格被粘贴到比赛 B！
 
-### 3.4 官方四大原生护栏执行细节（Anti-Mismatch、Anti-Omission 23家、In-Flight Selector Pushdown、Dynamic DOM Escalation）
+### 3.4 官方四大原生护栏执行细节（Anti-Mismatch、Anti-Omission 22家、In-Flight Selector Pushdown、Dynamic DOM Escalation）
 
 - **护栏一：Anti-Mismatch Guardrail（防错位防串号护栏）**：
   - **URL 与实体显式绑定**：在进货抓取前显式建立端点字典（`ah_url`, `ou_url`, `eu_url`, `1x2d_url`），绝不依赖盲目的数组下标循环；
   - **特征词双向断言**：处理批量返回时，必须校验专属特征词（亚盘验证 `Crown 亚让/让球`、欧指验证 `百家做市/返还率`、大小球验证 `高于/低于`），发现错位立即报警阻断，杜绝跨盘串号与数据张冠李戴；
   - **GB18030 二进制保真解码**：球探网二级变盘流水页面（`changeDetail/*.aspx`）必须基于原始 bytes 显式以 `gb18030` 解码，严禁外部默认 UTF-8 强解导致队名与盘口汉字乱码。
-- **护栏二：Anti-Omission 23 家法定白名单布尔断言（防漏 23 家做市商）**：
+- **护栏二：Anti-Omission 22 家法定白名单布尔断言（防漏 22 家做市商）**：
   - **Cid 提取防偏规约**：在 `1x2d.js` 的 `var game=Array(...)` 中，竖线分割的第一项 `parts[0]` 为机构 ID (`cid`)。**绝对严禁错用 `parts[1]`**！
-  - **21 家欧指白名单 Hash Map**：以法定 21 家欧指 cid 集合构建 Hash Map 进行常数级精确提取；188Bet 与 Polymarket 走各自槽位；
-  - **23 项布尔存在性核销**：组装简报时必须逐家执行布尔核对清单（Boolean Checklist），除体彩深盘不开单固、次级联赛香港马会未开亚盘外，所有法定做市商缺失立即判定为采集遗漏并物理阻断，缺失项必须显式标记「官方未开盘」，严禁静默漏报！
-- **护栏三：In-Flight Selector Pushdown & 28 个采集端点 Schema 防伪（27 分析 + 1 交付）**：
+  - **21 家欧指白名单 Hash Map**：以法定 21 家欧指 cid 集合构建 Hash Map 进行常数级精确提取；188Bet 走独立槽位；
+  - **22 项布尔存在性核销**：组装简报时必须逐家执行布尔核对清单（Boolean Checklist），除体彩深盘不开单固、次级联赛香港马会未开亚盘外，所有法定做市商缺失立即判定为采集遗漏并物理阻断，缺失项必须显式标记「官方未开盘」，严禁静默漏报！
+- **护栏三：In-Flight Selector Pushdown & 27 个采集端点 Schema 防伪（27 分析）**：
   - **选择器底层下推（`css_selector`）**：抓取 HTML 页面时强制传递精确选择器：21 张变盘流水表用 `css_selector="#odds2 table"`；亚盘/大小球全景总表用 `css_selector="#table_odds"`；分析页用完整 HTML（可选 `#porlet_*`）；波胆用 `#analy_sbAllOdds`；禁止再用已失效的 `#team_lineup`。
-  - **28 个采集端点 → 最终七表 Schema 强断言**：JSONL 必须包含 27 个分析端点键（`1x2d.js`, `analysis.html`, `odds.html`, `analy.json`, `asian_odds.html`, `over_under.html`, 7家机构21张流水HTML）；`polymarket.json` 不入分析库；ETLX 直接投影后最终库只能有 7 张表，`球队基本情况` 只保留比赛信息、阵容、伤停，不再生成 `数据状态` 或 `机构状态` 行。任何通过填充乱码、空白字符串或伪造文本虚标体积的行为，均会导致 JSON 解析破裂与装配阶段直接抛出错误，从物理根源杜绝 AI 作弊填充！
+  - **27 个采集端点 → 最终七表 Schema 强断言**：JSONL 必须包含 27 个分析端点键（`1x2d.js`, `analysis.html`, `odds.html`, `analy.json`, `asian_odds.html`, `over_under.html`, 7家机构21张流水HTML）；ETLX 直接投影后最终库只能有 7 张表，`球队基本情况` 只保留比赛信息、阵容、伤停，不再生成 `数据状态` 或 `机构状态` 行。任何通过填充乱码、空白字符串或伪造文本虚标体积的行为，均会导致 JSON 解析破裂与装配阶段直接抛出错误，从物理根源杜绝 AI 作弊填充！
 - **护栏四：Dynamic DOM Escalation Guardrail（动态渲染升级护栏，防空壳抽稀）**：
   - **空骨架判定标准**：若 Level 1 请求提取到的数据表格行数（`<tr>` 数量）$< 2$ 且页面包含动态加载脚本，自动无缝升阶至 `mcp__scrapling__browser_fetch(network_idle=True)`，等待网络静默完成再抽取 DOM，彻底杜绝只抓 190 行残缺骨架！
 
@@ -621,19 +620,19 @@ Feed 以 `$` 分为前后两段：前段是联赛字典（`#` 分隔）；后段
 
 ---
 
-## 第五工段：模式二·单场【推演源数据】采集与 28 端点装配
+## 第五工段：模式二·单场【推演源数据】采集与 27 端点装配
 
 底层源数据（`data/{销售日}/{matchId}.db`）是 27 个分析端点真实物理原材料经 ETLX 投影后的最终七表 SSOT；27 个端点回执、哈希与采集时间留在抓取层 JSONL，不进入最终库。数据工位只交付 `.db` 与可选人类简报；推演看数规则归下游分析工位，本工位不配置、不校验 EvoOntology。`data/{销售日}/{matchId}.md` 可选同步生成，仅作为面向人类人工复盘查验的可视化看板（推演大脑绝对严禁读取 .md 做推演，彻底消灭假数据与幻觉）。坚决禁止新增任何 `slices/*.json` 冗余中间文件！
 
 ### 5.1 Scrapling 官方 API 进货入口：项目适配器 Spider 主路径，MCP 降级
 
-**主路径（批量、可原子装配）**：每场一次运行项目适配器 `ingest_spider.py`。它基于 Scrapling 官方 `Spider`/`FetcherSession`/`StealthyFetcher` API，额外承载 28 端点契约与 23 家做市商业务字典：
+**主路径（批量、可原子装配）**：每场一次运行项目适配器 `ingest_spider.py`。它基于 Scrapling 官方 `Spider`/`FetcherSession`/`StealthyFetcher` API，额外承载 27 端点契约与 22 家做市商业务字典：
 
 ```text
-py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {YYYY-MM-DD} --home {主队} --away {客队} --output <仓库外临时.jsonl> [--force] [--polymarket-slug {slug}]
+py -3.13 skills/match-scraper/scripts/ingest_spider.py --match-id {matchId} --sales-date {YYYY-MM-DD} --home {主队} --away {客队} --output <仓库外临时.jsonl> [--force]
 ```
 
-它按 `config/endpoints.json` 发 28 个请求，逐端点分类过门禁，由 Scrapling 官方 `ItemList.to_jsonl()` 导出 27 行分析端点 JSONL（`polymarket.json` 仅为交付，不入分析库），**不再写 raw JSON**。同一输出文件 10 分钟内、且缓存是同一场比赛的完整 27 行时自动跳过（cooldown，输出 `ok:false` + `cached:true`）；主人明确说“重新分析”时才加 `--force`。随后建**一个空的七表工作库**，由 ETLX 直接读取 JSONL 一次完成装配：
+它按 `config/endpoints.json` 发 26 个请求（`eu_42` 走 changeDetail 槽位，不单发请求），逐端点分类过门禁，由 Scrapling 官方 `ItemList.to_jsonl()` 导出 27 行分析端点 JSONL，**不再写 raw JSON**。同一输出文件 10 分钟内、且缓存是同一场比赛的完整 27 行时自动跳过（cooldown，输出 `ok:false` + `cached:true`）；主人明确说“重新分析”时才加 `--force`。随后建**一个空的七表工作库**，由 ETLX 直接读取 JSONL 一次完成装配：
 
 ```bash
 mkdir -p data/.build
@@ -657,7 +656,7 @@ rm -rf data/.build
 
 外部只读复核至少检查：`sqlite_master` 中只有七张业务表且 0 视图；`球队基本情况` 行数 = 1 + `数据类型` 的阵容/伤停；`欧指`=21；`欧指变盘`、`亚盘变盘`、`大小球变盘` 均非空；`PRAGMA integrity_check=ok`。`球队基本情况` 固定为 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`；行顺序固定为 比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。失败时保留 `data/.build/build.db` 供检查，不动旧最终库。**批量进货只走这条主路径。** JSONL 是仓库外临时交接物，成功后删除。ETLX 若打印 `Error loading .env file` 但 exit 0 且行数正确，属非致命噪声；以 SQLite 只读复核为准，不能只看 ETLX 退出码。
 
-**降级/诊断（单端点或工具不可用时）**：以下 MCP 三部曲只作单请求诊断与降级，不得用来冒充 28 端点原子装配。
+**降级/诊断（单端点或工具不可用时）**：以下 MCP 三部曲只作单请求诊断与降级，不得用来冒充 27 端点原子装配。
 
 1. **步骤一：开辟全真会话（Open Session）**：
    调用 Scrapling MCP `mcp__scrapling__open_request_session`：
@@ -669,8 +668,8 @@ rm -rf data/.build
    ```
    全真模拟 Chrome TLS/JA3 指纹与真实 Client Hints 标头，底层连接池持久复用，抹除爬虫特征；
 2. **步骤二：三路端点分流流式拉取（Three-Way Typed Stream Requests）**：
-   复用同一个 `session_id`，调用 `mcp__scrapling__session_make_request` 针对 28 端点执行**三路分流提取**，严禁一刀切选择器破坏：
-   - **① 纯数据与脚本流（`1x2d.js`、`analy.json`、`polymarket.json`）**：
+   复用同一个 `session_id`，调用 `mcp__scrapling__session_make_request` 针对 27 端点执行**三路分流提取**，严禁一刀切选择器破坏：
+   - **① 纯数据与脚本流（`1x2d.js`、`analy.json`）**：
      - `extraction_type="text"`，`main_content_only=false`，`css_selector=null`；
      - 直出 100% 原始长串，`1x2d.js` 必须涵盖全网机构欧指且 21 家法定欧指 cid 完整存在，绝不进行截断！
    - **② 完整分析 DOM 流（`analysis.html`、`odds.html`）**：
@@ -683,9 +682,9 @@ rm -rf data/.build
 3. **步骤三：显式关闭会话（Close Session）**：
    拉取完毕后立即调用 `mcp__scrapling__close_session(session_id=session_id)` 显式释放 TCP 连接与系统句柄。
 
-### 5.2 单场法定 28 个底层端点双轨全景映射表（含亚盘/大小全景总表与保真解码）
+### 5.2 单场法定 27 个底层端点双轨全景映射表（含亚盘/大小全景总表与保真解码）
 
-单场比赛全量装配为底层存证 `data/{销售日}/{matchId}.db`，确立 **Tier 1 聚合核心直达通道（高可用 CDN，永不封禁） + Tier 2 补充明细温和通道（单并发限流 2.0s，阻断自愈）** 双轨架构。**机器唯一契约是 `config/endpoints.json`；本表只是摘要。** 抓取层防假成功检查（表头空壳、JS 空壳、移动端压行、23 家缺失）见 `references/data-integrity-gates.md`；其项目落地映射已写在文末。
+单场比赛全量装配为底层存证 `data/{销售日}/{matchId}.db`，确立 **Tier 1 聚合核心直达通道（高可用 CDN，永不封禁） + Tier 2 补充明细温和通道（单并发限流 2.0s，阻断自愈）** 双轨架构。**机器唯一契约是 `config/endpoints.json`；本表只是摘要。** 抓取层防假成功检查（表头空壳、JS 空壳、移动端压行、22 家缺失）见 `references/data-integrity-gates.md`；其项目落地映射已写在文末。
 
 | 序号 | Payload Key | Tier | 请求目标 URL 规范 | 编码 | 选择器下推 / 模式 | 业务作用与说明 |
 | :---: | :--- | :---: | :--- | :--- | :--- | :--- |
@@ -696,27 +695,17 @@ rm -rf data/.build
 | **5~11** | `ah_{cid}.html` (7家亚盘) | 2 | `https://m.titan007.com/AsianDetail/{cid}/{mid}.htm` *(cid: 1, 3, 8, 12, 47, 42, 48)* | UTF-8 | 移动端服务端原生直出 | 澳彩/皇冠/365/易胜博/平博/188/马会亚盘变盘时序流水 |
 | **12~18** | `ou_{cid}.html` (7家大小) | 2 | `https://m.titan007.com/OuDetail/{cid}/{mid}.htm` *(cid: 1, 3, 8, 12, 47, 42, 48)* | UTF-8 | 移动端服务端原生直出 | 法定 7 大机构大小球变盘时序流水 |
 | **19~25** | `eu_{cid}.html` (7家欧指) | 2 | `https://m.titan007.com/CompensateDetail/{cid}/{mid}.htm` *(cid: 1, 3, 8, 12, 47, 42, 48)* | UTF-8 | 移动端服务端原生直出 | 法定 7 大机构欧洲胜平负变盘时序流水 |
-| **26** | `polymarket.json` | 1 | `https://gamma-api.polymarket.com/events?slug={slug}` | UTF-8 | JSON 精准单事件 | 链上真实去中心化真金白银定价概率 |
-| **27** | `asian_odds.html` | 2 | `https://m.titan007.com/HandicapDataInterface.ashx?scheid={mid}&type=1&oddskind=0` | UTF-8 | 纯 JSON 结构化流 | **亚盘初即对比全景总表**（全网做市商初盘水位/盘口与即盘水位/盘口纯 JSON 直出） |
-| **28** | `over_under.html` | 2 | `https://m.titan007.com/HandicapDataInterface.ashx?scheid={mid}&type=1&oddskind=1` | UTF-8 | 纯 JSON 结构化流 | **大小球初即对比全景总表**（全网做市商初盘大水/盘口与即盘大水/盘口纯 JSON 直出） |
+| **26** | `asian_odds.html` | 2 | `https://m.titan007.com/HandicapDataInterface.ashx?scheid={mid}&type=1&oddskind=0` | UTF-8 | 纯 JSON 结构化流 | **亚盘初即对比全景总表**（全网做市商初盘水位/盘口与即盘水位/盘口纯 JSON 直出） |
+| **27** | `over_under.html` | 2 | `https://m.titan007.com/HandicapDataInterface.ashx?scheid={mid}&type=1&oddskind=1` | UTF-8 | 纯 JSON 结构化流 | **大小球初即对比全景总表**（全网做市商初盘大水/盘口与即盘大水/盘口纯 JSON 直出） |
 
-### 5.3 欧洲指数 23 家做市商法定名单与提取契约
+### 5.3 欧洲指数 22 家做市商法定名单与提取契约
 
 在 `1x2d.js` 的 `var game=Array(...)` 中以 `parts[0]`（cid）作为唯一匹配依据，严格 1:1 对齐 `config/datasources.json` 的 `tracked_bookmakers`。**本技能不再复制完整 cid 表，避免名单漂移。**
 
 - **21 个 euro cid**：`80, 545, 281, 90, 177, 432, 115, 82, 81, 104, 255, 110, 2, 474, 649, 800, 482, 386, 826, 16, 1129`。
 - **188Bet**：`1x2d.js` 中不存在；只走 `changeDetail` 的 `change_cid=42`，以 `ah_42`、`ou_42` 非空和 `eu_42` 请求成功为证据，槽位标 `supported` + `route: changeDetail`。
-- **Polymarket**：两个 cid 都为空，只走 `polymarket.json`；`[]` 是合法 `not_offered`。
-- **5 批次核销名单**：第 1 批 `澳彩/皇冠/平博/Bet365/易胜博`；第 2 批 `香港马会/188Bet/威廉希尔/立博/伟德`；第 3 批 `Interwetten/Bwin/SNAI/必发/利记`；第 4 批 `沙巴/Marathon/Betway/Unibet/Paddy Power`；第 5 批 `10Bet/中国体彩/Polymarket`。名称以 roster 为准，cid 以 `config/endpoints.json` 为准。
-- **满格点亮断言（Anti-Omission 23 CIDs Gate）**：装配存证 JSON 与简报战区三时必须逐项布尔校验，23 家机构缺失立即判定为采集遗漏并物理阻断，官方未开盘项显式标记 `[官方未开盘]`。绝对严禁任何机构被静默丢弃！
-
-### 5.4 Polymarket 链上预测市场进货标准（Polymarket 端点）
-
-- **标准三步发现法**：
-  1. 调用 `https://gamma-api.polymarket.com/sports` 获取赛事元数据（欧冠 UCL, 欧联 UEL, 西甲, 英超等）；
-  2. 按联赛 Series 批量拉取活跃事件：`https://gamma-api.polymarket.com/events?series_id={id}&closed=false&limit=100`；
-  3. 严格核验队序 `teams[].ordering`，读取 `outcomePrices` 转化为美分与倍率，填入 `payloads['polymarket.json']`；
-  4. 五大联赛与主流杯赛常态化开盘，必须提供真实可点链接（`https://polymarket.com/event/{slug}`）。
+- **5 批次核销名单**：第 1 批 `澳彩/皇冠/平博/Bet365/易胜博`；第 2 批 `香港马会/188Bet/威廉希尔/立博/伟德`；第 3 批 `Interwetten/Bwin/SNAI/必发/利记`；第 4 批 `沙巴/Marathon/Betway/Unibet/Paddy Power`；第 5 批 `10Bet/中国体彩`。名称以 roster 为准，cid 以 `config/endpoints.json` 为准。
+- **满格点亮断言（Anti-Omission 22 CIDs Gate）**：装配存证 JSON 与简报战区三时必须逐项布尔校验，22 家机构缺失立即判定为采集遗漏并物理阻断，官方未开盘项显式标记 `[官方未开盘]`。绝对严禁任何机构被静默丢弃！
 
 ---
 
@@ -736,11 +725,11 @@ rm -rf data/.build
      1. **Anti-Ad Gate（防广告横幅）**：简报开头与正文绝对严禁包含“新球会员”、“每天最低节省”、“下载App”等营销广告词（检出命中数 $\equiv 0$）；
      2. **Anti-Collapse Gate（防表格炸裂）**：严禁出现多层嵌套 table 坍塌引发的数十乃至 130 列表格横向炸裂；任意一行文本中 `|` 字符数量必须 $\le 35$ 个；
      3. **Anti-Placeholder Gate（防未渲染死占位符）**：往绩与交锋战绩必须由 `analy.json` 或微观结构化数组真实提炼渲染，严禁出现原站前端死模板 `近 0 场 主客相同` 等假空文字；若历史上确实无交锋记录，显式标注 `[历史无交锋记录]`；
-     4. **Anti-Omission 23 CIDs Gate（23家机构点亮）**：战区三欧指大表必须严格遍历 23 家做市商 CID 白名单，缺盘机构显式标注 `[官方未开盘]`；
+     4. **Anti-Omission 22 CIDs Gate（22家机构点亮）**：战区三欧指大表必须严格遍历 22 家做市商 CID 白名单，缺盘机构显式标注 `[官方未开盘]`；
      5. **Anti-Omission Initial Odds Gate（初盘完整性强断言门禁）**：战区三·五必须完整呈现主流机构亚盘与大小球初盘大表，亚盘初盘行数 $\ge 5$ 行，大小球初盘行数 $\ge 5$ 行，绝对严禁出现整篇简报无亚盘初盘的断代现象！缺失初盘大表直接判定为残次品并停线阻断！
      6. **Anti-Timeline-Distortion Gate（防时序倒错怪胎门禁）**：战区四流水表进货时必须 100% 保持源端原貌直出，绝对严禁手工调换行序，绝对严禁搞“头是初盘、脖子是终盘、身子往回流”的怪胎拼接，绝对严禁进行 `slice(0, 10)` 或 `[:9]+[-1:]` 截断丢弃变盘记录！流水表全量直通，初盘完整呈现；推演分析时统一由时间戳升序排序律（`Sort by Timestamp ASC`）自适应对齐时序！
    - **真实行数与严禁伪上限红线（Anti-Truncation Invariant）**：彻底废除人为设定的 420~650 行伪上限！流水表真实行数完全由源网页变盘历史客观决定（行数通常在 350~2000 行区间，有多少行就诚实呈现多少行）。绝对严禁进行任何 `slice(0, 10)`、`[:9] + [-1:]` 等机械截断，历史开盘记录（初盘/早盘）与中间所有变盘记录必须 100% 满格点亮！严禁生成抽稀半成品，也严禁靠倾倒无关垃圾网页撑行数；
-   - **战区全覆盖**：必须 100% 包含全量 6 大战区（一·阵容伤停、二·基础战绩与积分、三·23家做市商欧指、三点五·主流机构亚盘与大小球初即大表、四·21张变盘流水单表、五·Crown波胆与体彩实盘）；
+   - **战区全覆盖**：必须 100% 包含全量 6 大战区（一·阵容伤停、二·基础战绩与积分、三·22家做市商欧指、三点五·主流机构亚盘与大小球初即大表、四·21张变盘流水单表、五·Crown波胆与体彩实盘）；
    - **战区三·五黄金标准装配模板**：
      - **3.5.1 核心做市商亚盘让球初即全景大表**：
        | 机构ID | 做市商机构 | 初盘 (主水 / 盘口 / 客水) | 即盘 (主水 / 盘口 / 客水) | 盘口变动趋势 |
@@ -814,7 +803,7 @@ rm -rf data/.build
 
 ### 7.5 开箱即用闭环工单规范与双轨端点任务字典
 
-专职搬运工（Data Ingest Worker）启动时，系统已在工单中内联完整的 28 端点抓取字典与落盘骨架。**严禁在任务派发后调用 `read_file`、`Get-ChildItem` 查阅历史已落盘文件或翻看系统文档，0 秒拿起工单直接调用 Spider 工具！**
+专职搬运工（Data Ingest Worker）启动时，系统已在工单中内联完整的 27 端点抓取字典与落盘骨架。**严禁在任务派发后调用 `read_file`、`Get-ChildItem` 查阅历史已落盘文件或翻看系统文档，0 秒拿起工单直接调用 Spider 工具！**
 
 #### 7.5.1 双轨端点任务字典
 ```javascript
@@ -824,7 +813,6 @@ const ENDPOINTS = [
   { key: "analysis.html", url: `https://m.titan007.com/analy/Analysis/${mid}.htm`, tier: 1, type: "html", selector: null },
   { key: "odds.html", url: `https://m.titan007.com/analy/Lineup/${mid}.htm`, tier: 1, type: "html", selector: null },
   { key: "analy.json", url: `https://m.titan007.com/analy/shijian/${mid}.htm`, tier: 1, type: "text" },
-  { key: "polymarket.json", url: `https://gamma-api.polymarket.com/events?slug=${slug}`, tier: 1, type: "text" },
 
   // 2. Tier 2 补充明细端点 (温和单并发限流，阻断平滑降级自愈)
   { key: "asian_odds.html", url: `https://m.titan007.com/HandicapDataInterface.ashx?scheid=${mid}&type=1&oddskind=0`, tier: 2, type: "text" },
@@ -842,14 +830,14 @@ ETLX `BUILD_FINAL` 直接读取每行一个 JSON 对象；字段名与临时表 
 {"match_id":"3003920","endpoint_key":"1x2d.js","content_type":"javascript","content":"...","chars":312540,"raw_sha256":"...","sha256":"...","source_url":"https://txt.titan007.com/1x2/3003920.js","fetched_at":"2026-10-24 12:10:00","status":200,"state":"supported","empty_state":null,"extraction_type":"text"}
 ```
 
-`polymarket.json` 不进入该 JSONL；它只作为交付链接在工位 4 独立核验。JSONL 成功后删除，不得提交到仓库。
+JSONL 成功后删除，不得提交到仓库。
 
 #### 7.5.3 人类简报装配骨架（可选看板 `{matchId}.md`，建议 $\ge 350$ 行；不生成不影响 `.db` 与分析）
 包含全量 6 大战区：
 - `# {竞彩编号} {联赛} {主队} vs {客队} 推演源数据简报`
 - `## 战区一·首发阵容、阵型与伤停情报`
 - `## 战区二·积分排名、主客攻防与交锋往绩`
-- `## 战区三·23 家做市商欧洲指数与凯利指数点亮大表`（严格遍历 23 家 CID 白名单，缺盘标 `[官方未开盘]`）
+- `## 战区三·22 家做市商欧洲指数与凯利指数点亮大表`（严格遍历 22 家 CID 白名单，缺盘标 `[官方未开盘]`）
 - `## 战区三·五·核心做市商亚盘让球与大小球初即全景大表`（3.5.1 亚盘 $\ge 5$ 行，3.5.2 大小球 $\ge 5$ 行）
 - `## 战区四·主流做市商 21 张变盘流水明细大表`（100% 保持源端原生排列镜像直出，不得调序或掐头去尾截断）
 - `## 战区五·皇冠波胆赔率矩阵与中国体彩实盘数据`（体彩 HAD/HHAD 让球盘）
@@ -862,14 +850,13 @@ ETLX `BUILD_FINAL` 直接读取每行一个 JSON 对象；字段名与临时表 
 - Scrapling 四级升阶仍打不开页面：立即向主人置顶发出严重警报提示「🚨 数据抓取通道受阻！」，报告失败并结束流程，绝不写残缺记录进 memory，严禁静默结束！
 - 发现错位或场次缺失：立即置顶提示主人数据解析异常，记录原始错误并结束流程。
 
-### 8.2 多数据源协同矩阵（titan007, FPL, Big Balls, Football-Data, Polymarket）
+### 8.2 多数据源协同矩阵（titan007, FPL, Big Balls, Football-Data）
 - **主数据源（Primary）**：titan007 球探页（Scrapling 0.5 官方原生流水线独家采掘）；
 - **阵容伤停独立双引擎**：
   - 英超官方 FPL 数据库（`injury-service.js` 直连英超主力伤情与出战概率）；
   - Big Balls Sports Data API（直连五大联赛与美职联，凭证 `~/.gemini/config/bigballs_token.txt`）；
 - **辅助交叉验证源**：
   - Football-Data.org（欧洲主要联赛赛程与交锋，凭证 `~/.gemini/config/football_data_tokens.json`）；
-  - Polymarket 去中心化预测市场（Gamma/CLOB 链上交易概率，仅作公众情绪交叉验证）。
 
 ### 8.3 赛后复盘赛果极速提取通道（赋能 post-review 的官方聚合直取通道）
 - 赛后复盘获取已完场比分时，作为 `skills/post-review` 的底层数据通道，恪守双轨高可用架构：

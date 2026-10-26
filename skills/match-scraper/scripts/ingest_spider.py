@@ -1,6 +1,6 @@
 """Scrapling capture adapter and endpoint classification.
 
-This module owns the 28-endpoint contract, the 23-bookmaker roster, payload
+This module owns the 27-endpoint contract, the 22-bookmaker roster, payload
 assessment, and the capture-to-JSONL boundary.  It never writes SQLite and
 never writes a project raw bundle.  ETLX is the only data-row writer.
 
@@ -88,7 +88,7 @@ class EndpointSpec:
             required=bool(data["required"]),
             empty_state=data["empty_state"],
             gate=data["gate"],
-            tier=int(data.get("tier", 1 if data.get("group") in ("core", "polymarket") else 2)),
+            tier=int(data.get("tier", 1 if data.get("group") == "core" else 2)),
             aggregation_source=data.get("aggregation_source", ""),
             skip_request=bool(data.get("skip_request", False)),
         )
@@ -259,11 +259,11 @@ def _validate_contract(
     non_roster: tuple[int, ...],
 ) -> None:
     keys = [endpoint.key for endpoint in endpoints]
-    if len(endpoints) != 28 or len(set(keys)) != 28:
-        raise ValueError("endpoint manifest must contain 28 unique keys")
+    if len(endpoints) != 27 or len(set(keys)) != 27:
+        raise ValueError("endpoint manifest must contain 27 unique keys")
     names = [bookmaker.official_name for bookmaker in bookmakers]
-    if len(bookmakers) != 23 or len(set(names)) != 23:
-        raise ValueError("bookmaker roster must contain 23 unique official names")
+    if len(bookmakers) != 22 or len(set(names)) != 22:
+        raise ValueError("bookmaker roster must contain 22 unique official names")
     euro = [bookmaker.euro_cid for bookmaker in bookmakers if bookmaker.euro_cid is not None]
     change = [bookmaker.change_cid for bookmaker in bookmakers if bookmaker.change_cid is not None]
     if len(euro) != 21 or len(set(euro)) != 21 or set(euro) != set(EURO_CIDS):
@@ -544,21 +544,6 @@ def assess_payload(
                 errors.append("empty_required_endpoint")
                 state = "failed"
 
-    elif key == "polymarket.json":
-        try:
-            payload = json.loads(text)
-        except (json.JSONDecodeError, TypeError):
-            errors.append("json_invalid")
-            payload = None
-        if payload in ([], None):
-            state = "not_offered"
-        elif isinstance(payload, (dict, list)):
-            state = "ok"
-        else:
-            state = "failed"
-            if "json_invalid" not in errors:
-                errors.append("json_shape_invalid")
-
     elif spec.group in TABLE_GROUPS:
         stripped = text.strip()
         rows = _table_data_rows(text)
@@ -655,7 +640,6 @@ except ImportError:  # pragma: no cover - curl_cffi ships with Scrapling
 
 ROOT = Path(__file__).resolve().parents[3]
 REFERER = "https://m.titan007.com/analy/Analysis/{match_id}.htm"
-ANALYSIS_DELIVERY_KEY = "polymarket.json"
 
 
 @dataclass(frozen=True)
@@ -665,15 +649,13 @@ class RequestPlan:
     tier: int = 1
 
 
-def build_request_plan(contract: Contract, match_id: str, polymarket_slug: str | None) -> list[RequestPlan]:
+def build_request_plan(contract: Contract, match_id: str) -> list[RequestPlan]:
     tier1: list[RequestPlan] = []
     tier2: list[RequestPlan] = []
     for spec in contract.endpoints:
         if spec.skip_request:
             continue
-        if spec.key == ANALYSIS_DELIVERY_KEY and not polymarket_slug:
-            continue
-        values = {"match_id": match_id, "polymarket_slug": polymarket_slug or ""}
+        values = {"match_id": match_id}
         plan = RequestPlan(key=spec.key, url=spec.url_template.format(**values), tier=spec.tier)
         if spec.tier == 1:
             tier1.append(plan)
@@ -718,7 +700,6 @@ class IngestSpider(Spider):
         sales_date: str,
         home: str = "",
         away: str = "",
-        polymarket_slug: str | None = None,
         browser_fallback: bool = False,
         proxy: str | None = None,
         root: Path = ROOT,
@@ -728,7 +709,6 @@ class IngestSpider(Spider):
         self.sales_date = sales_date
         self.home = home
         self.away = away
-        self.polymarket_slug = polymarket_slug
         self.browser_fallback = browser_fallback
         self.proxy = (
             proxy
@@ -763,7 +743,7 @@ class IngestSpider(Spider):
         self.logger.info("ingest start match=%s endpoints=%s", self.match_id, len(self.contract.endpoints))
 
     async def start_requests(self):
-        for plan in build_request_plan(self.contract, self.match_id, self.polymarket_slug):
+        for plan in build_request_plan(self.contract, self.match_id):
             yield Request(
                 plan.url,
                 callback=self.parse,
@@ -811,7 +791,7 @@ class IngestSpider(Spider):
     async def parse(self, response):
         key = str(response.meta.get("key", ""))
         result = self._record_response(response, key)
-        if result is None or key == ANALYSIS_DELIVERY_KEY:
+        if result is None:
             return
         spec = self.contract.endpoint(key)
         yield result.item(self.match_id, spec.extraction_type if spec else "")
@@ -859,17 +839,6 @@ class IngestSpider(Spider):
             if key in self.results:
                 continue
             spec = self.contract.endpoint(key)
-            if key == ANALYSIS_DELIVERY_KEY and not self.polymarket_slug:
-                self.results[key] = EndpointAssessment(
-                    key=key,
-                    url="",
-                    status=0,
-                    text="[]",
-                    encoding="utf-8",
-                    state="not_offered",
-                    attempts=0,
-                )
-                continue
             if spec is not None and spec.skip_request:
                 self.results[key] = assess_payload(
                     self.contract,
@@ -897,8 +866,6 @@ class IngestSpider(Spider):
         self._fill_missing()
         items: list[dict[str, Any]] = []
         for key in self.contract.endpoint_keys:
-            if key == ANALYSIS_DELIVERY_KEY:
-                continue
             spec = self.contract.endpoint(key)
             result = self.results.get(key)
             if result is None:
@@ -914,7 +881,6 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--sales-date", default=date.today().isoformat(), help="销售日 YYYY-MM-DD")
     p.add_argument("--home", default="", help="主队名；提供时做实体核对")
     p.add_argument("--away", default="", help="客队名；提供时做实体核对")
-    p.add_argument("--polymarket-slug", default=None, help="Polymarket 事件 slug；不提供则记 not_offered")
     p.add_argument("--browser-fallback", action="store_true", help="HTTP 请求失败时用 StealthyFetcher 逐端点降级（慢）")
     p.add_argument("--proxy", default=None, help="代理通道 URL，例如 http://127.0.0.1:10808")
     p.add_argument("--output", default=None, help="临时 JSONL 路径；默认在系统临时目录生成")
@@ -968,7 +934,6 @@ def main(argv: list[str] | None = None) -> int:
         sales_date=args.sales_date,
         home=args.home,
         away=args.away,
-        polymarket_slug=args.polymarket_slug,
         browser_fallback=args.browser_fallback,
         proxy=args.proxy,
         root=root,
