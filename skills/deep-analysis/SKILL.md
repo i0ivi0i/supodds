@@ -1,6 +1,6 @@
 ---
 name: deep-analysis
-description: "深度分析技能：通过 EvoOntology 只读看数，按 10 步完成胜平负、让球与大小球推演，写【图谱认知基因】与【四维认知契约卡】，输出 announce 交接。用于「深度分析」「分析这场比赛」「详细看看」或赛前初筛之后。不抓取、不落库、不写 memory、不排版交付表。"
+description: "深度分析技能：通过 EvoOntology 只读看数，按 10 步完成胜平负、让球与大小球推演，写【图谱认知基因】与【四维认知契约卡】，输出 announce 交接。用于「深度分析」「分析这场比赛」「详细看看」或赛程索引与进货之后。不抓取、不落库、不写 memory、不排版交付表。"
 metadata: { "emoji": "📊" }
 ---
 # 深度分析（deep-analysis）
@@ -79,11 +79,11 @@ metadata: { "emoji": "📊" }
 
 ### 工单
 
-`match-screening` 下发标准单场工单；本技能只接收未开赛的合法工单，不做二次路由：
+`主会话` 下发标准单场工单；本技能只接收未开赛的合法工单，不做二次路由：
 
-`work_order` 必含字段：`matchId`、`league`、`kickoffTime`、`homeTeam`、`awayTeam`、`analysisUrl`、`lotteryNumber`、`status`、`priorityScore`、`ingestSpec`、`zeroExplorationRule`、`evoontologyRetina`、`contextSummary`、`method_notes`（`adopted_methods` / `active_hypotheses` / `league_profile`）、`prior_contract_card`。示例值不写入主文件；字段一个不少。
+`work_order` 必含字段：`matchId`、`league`、`kickoffTime`、`homeTeam`、`awayTeam`、`analysisUrl`、`lotteryNumber`、`status`、`ingestSpec`、`zeroExplorationRule`、`evoontologyRetina`、`contextSummary`、`method_notes`（`adopted_methods` / `active_hypotheses` / `league_profile`）、`prior_contract_card`。示例值不写入主文件；字段一个不少。
 
-**标准零件托盘 2 原样接收**：`match-screening` 的 `work_orders` 全字段保留；本技能消费 `matchId`、`league`、`kickoffTime`、`homeTeam`、`awayTeam`、`analysisUrl`、`contextSummary`、`method_notes`、`prior_contract_card`，其余字段（编号、状态、优先级、进货规格、零探索、Evo 预检标记）不改写、不丢弃。
+**标准零件托盘 2 原样接收**：`主会话` 的 `work_orders` 全字段保留；本技能消费 `matchId`、`league`、`kickoffTime`、`homeTeam`、`awayTeam`、`analysisUrl`、`contextSummary`、`method_notes`、`prior_contract_card`，其余字段（编号、状态、进货规格、零探索、Evo 预检标记）不改写、不丢弃。
 
 ### 分析员工单（本技能 owner）
 

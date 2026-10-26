@@ -38,9 +38,9 @@ Shin（1993）期刊原文需订阅，未放入。隔壁 `足球预测/温故而
 
 | 论文／页 | 可回查原文短句 | 现有流程中实际怎么用 | 适用边界／尚不能做什么 |
 | --- | --- | --- | --- |
-| Kaunitz，p7、14–16 | “Sometimes bookmakers offer odds above fair value either to compete to attract clients or to maintain a balanced book to avoid getting overly exposed to risk.” | 初筛阶段5、深度第4/8步比较同口径同时间的多公司基准、单家离群及持续变化；推荐标报价时点，成交另记 | 跨公司错价不是单家升降必出。本文 `1/平均赔率` 不等于本项目逐家比例去水再均值；本地方法单独标识、不称复现。延迟、限额、有限实盘及正文／表格疑误保留，不搬α或收益 |
+| Kaunitz，p7、14–16 | “Sometimes bookmakers offer odds above fair value either to compete to attract clients or to maintain a balanced book to avoid getting overly exposed to risk.” | 深度第4/8步比较同口径同时间的多公司基准、单家离群及持续变化；推荐标报价时点，成交另记 | 跨公司错价不是单家升降必出。本文 `1/平均赔率` 不等于本项目逐家比例去水再均值；本地方法单独标识、不称复现。延迟、限额、有限实盘及正文／表格疑误保留，不搬α或收益 |
 | Hegarty/Whelan，p18（短句）、4、20 | “This is a system of three linear equations in four unknowns (the three probabilities and the expected return) so there is no unique solution.” | 深度第5/7步先区分AH退本、四分盘拆半与竞彩三项；核对净胜球事件再比较欧亚 | AH平均校准较好不授权一票优先。退款率主估计用全样本，但脚注9也报告用过去赛季取得同样结果，不能说整篇无时序检验；未来参数须冻结 |
-| Andrikogiannopoulou，p8、13 | “it is impossible to disentangle between the above explanations.” | 初筛和深度第4/7/9步分主、平、客及赔率区间记录偏差疑点；公开报价、热度代理和真实注额分开 | 单庄家、100客户样本；长赔平局额外效应部分证据弱。高平不排除平，不固定只推冷，不从报价唯一识别庄家意图 |
+| Andrikogiannopoulou，p8、13 | “it is impossible to disentangle between the above explanations.” | 深度第4/7/9步分主、平、客及赔率区间记录偏差疑点；公开报价、热度代理和真实注额分开 | 单庄家、100客户样本；长赔平局额外效应部分证据弱。高平不排除平，不固定只推冷，不从报价唯一识别庄家意图 |
 | Feng，p1 | “Given a matrix of market odds on all possible score outcomes, we estimate the expected scoring rates for each team.” | 深度第3/5/6/7步把独立泊松与市场进球分布分开；核对胜者、净胜球、总进球的相容性 | 包含滚球动态研究。无完整比分市场与拟合条件不编Skellam参数；小球不等于平、三项胜平负不唯一确定让球 |
 | Constantinou，p11 | “the BN model assumes no temporal relationships.” | 深度第7步跨市场核验、复盘方法比较分清样本设计，所有新训练、调参只用预测时以前资料 | 评级有时间顺序，BN部分LOOCV可含未来资料；作者以关系不变解释，不将所报收益全称严格滚动实盘，不照搬模型 |
 | 德甲首球研究，p1 | “Our results indicate that neither side of the market anticipates goals by significantly adjusting their behaviour.” | 深度第8步区分微动事实与消息、跟价、风控等解释，复盘不以赛果倒证预知 | 单公司、单赛季、1Hz滚球首球前，负面结果不推广成所有赛前赔率无信息；赛中数据不进赛前预测 |
@@ -60,12 +60,12 @@ Shin（1993）期刊原文需订阅，未放入。隔壁 `足球预测/温故而
 
 ## 预测 → 推荐 → 复盘的实际闭环
 
-1. **初筛**：离群和矛盾表示值得深挖，不直接表示冷门或能赚；保留公司、市场、真实时点及缺失。
+1. **深度分析**：离群和矛盾表示值得深挖，不直接表示冷门或能赚；保留公司、市场、真实时点及缺失。
 2. **十步分析**：先独立泊松，再各公司逐项去水。比例归一与 OO-EPC 分开命名；无核实实现则标 OO-EPC 未执行。跨市场以「欧指 1X2 × 亚盘 AH × 大小球 OU」主力三盘联动为主线（大小球为进球空间与净胜球门槛核心支柱），Crown波胆仅作辅助市场对照；尚未进入的阶段记尚未发生，即时盘不是终盘。第9步三端比较落首选，替代解释与可推翻条件一并保留。报价同步不自动扣分，固定数值不一票裁决。
 3. **推荐留存**：`paper-application-v2`、matchId、发布时点、引用分析版本、赔率截至时点、公司／方法、最终主平客点概率与独立基准、首选／次选（全量 N 场 100% 逐场推演与契约卡落盘，文末附 2 串 1 组合）。已发布版不覆盖。Polymarket地址按现有教程核验，研究价不等于成交价。
 4. **逐场复盘**：新研究记录按比赛取最终有效赛前版，另列首选命中与备选覆盖、只评分赛前点概率，按场次／版本／指标去重。现有历史累计口径不改、不混入新研究账，不把覆盖提升当首选能力提升。
 5. **滚动学习**：新假设与旧方法在相同后续比赛和资料时点留预测，比较配对概率损失、首选及观望变化；按类别检查校准。无正式检验只称观察改善／恶化，不用单场、八场或引用数量证明准确率提升。
 
-完整技能入口：`skills/match-screening/SKILL.md` 阶段5、`skills/deep-analysis/SKILL.md` 研究应用入口及第4–9步、`skills/recommendation/SKILL.md` 推荐留存、`skills/post-review/SKILL.md` 概率评分／方法比较。不新增技能，不改抓取脚本；本次落实的是可执行分析和记录方法，不声称已训练或验证十九套模型。
+完整技能入口：`skills/deep-analysis/SKILL.md` 研究应用入口及第4–9步、`skills/recommendation/SKILL.md` 推荐留存、`skills/post-review/SKILL.md` 概率评分／方法比较。不新增技能，不改抓取脚本；本次落实的是可执行分析和记录方法，不声称已训练或验证十九套模型。
 
 图谱检索先调用 MCP `query_graph(question=...)`，再回当前原文核对；`source_location` 带文件页码／行号。旧图谱节点不替代当前正文。不要求每场十九篇打卡，不能把论文一句话变成新门禁。旧九篇的转写图表核查覆盖以各文件头部和 `核对记录.md` 为准，本次原句回检不是重新完整校准。

@@ -26,7 +26,7 @@
 **Pansuan Engine** 深刻融入马克思唯物主义关于“**高度专业化分工、科学流水线生产节拍器、神经中枢与执行车间相统一**”的现代工业 4.0 智慧：
 
 - **拒绝黑盒玄学，回归做市本源**：从胜平负、让球与大小球的初盘和变动，逆向解构庄家如何诱买、阻热及控制风险；欧亚背离优先审让球防守底线，逆向线路移动（RLM）主动追查尖锐资金痕迹。
-- **乔布斯式乐团指挥家架构（Conductor Mindset）**：`AGENTS.md` 纯化为手持指挥棒的中央调度总控台，掌控全场节拍与质量防错（Poka-Yoke），绝不亲自手持乐器演奏；微调无损迁移具体采掘与排版细则至五大车间，原位留驻权威指挥令牌与零件托盘标准契约指针。
+- **乔布斯式乐团指挥家架构（Conductor Mindset）**：`AGENTS.md` 纯化为手持指挥棒的中央调度总控台，掌控全场节拍与质量防错（Poka-Yoke），绝不亲自手持乐器演奏；微调无损迁移具体采掘与排版细则至四大车间，原位留驻权威指挥令牌与零件托盘标准契约指针。
 - **全库零临时脚本硬铁律（Zero-Script Invariant）**：主仓库 100% 蜕变为纯 Agent 认知与知识库圣殿，杜绝任何全语种（`.py/.ps1/.js/.bat/.sh`）临时脚本与磁盘 `tmp_*` 暂存中转。
 - **全流程 MCP 机械臂闭环**：数据进货 100% 走 Scrapling 官方 API + 项目适配器 `ingest_spider.py`（单场 27 端点、22 家做市商字典），做市看数 100% 依托 EvoOntology 全量结构化解析，纯数学算力外挂宿主独立服务（Goto 2026 OO-EPC 去水 + Dixon-Coles 修正泊松），全量理论反思依托 Graphify 5.6MB 博弈图谱。
 
@@ -47,7 +47,7 @@ flowchart LR
     end
 
     subgraph S3 ["第三工段：车间矩阵"]
-      D3["五大高内聚原生车间<br/>进货 ➔ 初筛 ➔ 推演<br/>交付 ➔ 复盘"]
+      D3["四大高内聚原生车间<br/>赛程 ➔ 进货 ➔ 推演<br/>交付 ➔ 复盘"]
     end
 
     subgraph S4 ["第四工段：品控防错"]
@@ -65,15 +65,15 @@ flowchart LR
 | :---: | :--- | :--- |
 | **第一工段** | **工厂意志与精算师最高灵魂宪章** | 确立精算师六大核心特质、十六条做市博弈第一性原则、沟通风格与行为边界。 |
 | **第二工段** | **中央总控台调度系统与节拍器** | 会话启动三部曲、推演态三阶段硬死锁（阶段 0 ➔ 1 ➔ 2）、蜂群 Central Scheduler 礼貌排队与单并发限流。 |
-| **第三工段** | **五大专业化生产车间工位矩阵** | 五大原生车间工位标准化契约、输入输出报文规范与十六大实操推演心法。 |
+| **第三工段** | **四大专业化生产车间工位矩阵** | 四大原生车间工位标准化契约、主会话阶段 0 赛程索引、输入输出报文规范与十六大实操推演心法。 |
 | **第四工段** | **流水线品控防错与工业安全断路器** | EvoOntology 官方只读语义、27 个分析采集端点与 22 家机构机位核销、全语种零临时脚本铁律、源头 1:1 镜像保真铁律、人类简报六重品控防错门禁（Anti-Ad/Anti-Collapse/Anti-Placeholder/22CIDs/Anti-Omission Initial Odds/Anti-Timeline-Distortion）。 |
 | **第五工段** | **巡检自愈、成品仓储与系统演化中枢** | 赛前/临盘/赛后三大主动巡检、每日 `memory/YYYY-MM-DD.md` 唯一单写原子封存、Graphify 图谱演进。 |
 
 ---
 
-## 🛠️ 五大专业化生产车间工位矩阵
+## 🛠️ 四大专业化生产车间工位矩阵
 
-系统解散历史单体冗余结构，解耦落地为五大独立、高内聚、零耦合的原生 Skill 生产车间，车间之间通过不可篡改的标准契约零件托盘（Parts Trays）交接：
+系统解散历史单体冗余结构，解耦落地为四大独立、高内聚、零耦合的原生 Skill 生产车间；阶段 0 赛程索引由主会话调用 `match-scraper` 模式一完成，不再单设 skill。车间之间通过不可篡改的标准契约零件托盘（Parts Trays）交接：
 
 ```mermaid
 flowchart LR
@@ -81,13 +81,7 @@ flowchart LR
         S1["Scrapling官方Spider<br/>AutoThrottle控频+双轨端点"]
     end
     subgraph T1 ["零件托盘 1"]
-        D1["data/{销售日}/{id}.db (SQLite SSOT)<br/>+ 可选纯净简报"]
-    end
-    subgraph W2 ["工位2: 业务初筛局 (match-screening)"]
-        S2["输入路由 + 编号解析<br/>全量打标 + 开球拦截"]
-    end
-    subgraph T2 ["零件托盘 2"]
-        D2["标准推演工单序列<br/>[{matchId, kickoffTime, ...}]"]
+        D1["data/{销售日}/meta.md 赛程索引<br/>+ {id}.db (SQLite SSOT)"]
     end
     subgraph W3 ["工位3: 推演大脑 (deep-analysis)"]
         S3["纯逻辑推演 (主文件 ≤500 行)<br/>EvoOntology视网膜 + Graphify"]
@@ -106,8 +100,7 @@ flowchart LR
     end
 
     W1 --> T1
-    W2 --> T2
-    T1 & T2 --> W3
+    T1 --> W3
     W3 --> T3
     T3 --> W4
     W4 --> T4
@@ -116,8 +109,7 @@ flowchart LR
 
 ```
 skills/
-├── match-scraper/      # 工位 1：全权数据进货局 (Scrapling Spider 官方原生并发)
-├── match-screening/    # 工位 2：业务初筛局 (4 种输入路由 + 开球拦截 + 标准工单)
+├── match-scraper/      # 工位 1：全权数据进货局 (Scrapling Spider 官方原生并发 + 模式一赛程索引)
 ├── deep-analysis/      # 工位 3：推演大脑总装局 (主文件 ≤500 行 + 3 本 references + 四维认知契约卡)
 ├── recommendation/     # 工位 4：战报交付局 (Poka-Yoke 门禁 + 标准 7 列表格 + 2 串 1)
 └── post-review/        # 工位 5：复盘审计局 (双列 1:1 真实对账 + 认知图谱自愈)
@@ -125,11 +117,12 @@ skills/
 
 | 车间工位 | 核心职责（高内聚） | 机械臂绑定与标准协议 | 工业标准出厂零件托盘（零耦合接口） |
 | :--- | :--- | :--- | :--- |
-| **工位 1：全权数据进货局**<br/>`skills/match-scraper` | 赛程索引抓取、27 个分析采集端点提取、22 家机构核销、单 IP 防封控频 | `Scrapling Spider` (`scripts/ingest_spider.py`) 导出 JSONL + `ETLX` 官方 `-file` 直接读取 | **零件托盘 1**：`data/{销售日}/{id}.db`（最终七表：球队基本情况/欧指/欧指变盘/亚盘/亚盘变盘/大小球/大小球变盘）+ 可选 `matchId.md` 人类简报 |
-| **工位 2：业务初筛局**<br/>`skills/match-screening` | 方式 1~4 输入统一路由、竞彩编号转换、开球时间先验拦截、全量打标排队 | 纯直读 `meta.md` 赛程索引，**0 外部网络**，严禁按层级淘汰比赛 | **零件托盘 2**：标准推演工单序列 `work_orders: [{matchId, kickoffTime, league, homeTeam, awayTeam, ...}]` |
+| **工位 1：全权数据进货局**<br/>`skills/match-scraper` | 赛程索引抓取、27 个分析采集端点提取、22 家机构核销、单 IP 防封控频 | `Scrapling Spider` (`scripts/ingest_spider.py`) 导出 JSONL + `ETLX` 官方 `-file` 直接读取；模式一写 `meta.md` 赛程索引 | **零件托盘 1**：`data/{销售日}/meta.md` 赛程索引 + `data/{销售日}/{id}.db`（最终七表：球队基本情况/欧指/欧指变盘/亚盘/亚盘变盘/大小球/大小球变盘）+ 可选 `matchId.md` 人类简报 |
 | **工位 3：推演大脑总装局**<br/>`skills/deep-analysis` | 纯只读全量结构化数据、去水点概率测算、Dixon-Coles 泊松分布、10 步庄家博弈破译（主文件 ≤500 行；操作分册按需加载） | `evoontology` MCP（`start_ontology_task` ➔ `browse_semantics` ➔ 5 批 `resolve_ontology_task` ➔ `execute_ontology_query` ➔ `finish_ontology_task`；无工具调用熔断）<br/>`sports-math` MCP (`devig_oo_epc`, `poisson_dixon_coles`)<br/>`graphify` 知识图谱 | **零件托盘 3**：**四维不可篡改【认知契约卡】** + 纯推演单场结果（胜负平、让球、点概率、比分） |
 | **工位 4：战报交付局**<br/>`skills/recommendation` | Poka-Yoke `Count(契约卡) ≡ N` 门禁、7 列表格拼装、Polymarket 真实链接核验、文末 2 串 1 优选 | 格式校验闸门（绝不折行、字段强校验、链接真实性）、原子化前置写入 memory | **零件托盘 4**：终端交付物（标准 7 列表格 + 文末【🎯 2 串 1 组合推荐】 + memory 审计底账） |
 | **工位 5：复盘审计局**<br/>`skills/post-review` | 真实赛果抓取、1:1 胜负平+让球双列真实对账、赛前无卡漏推红线报警、战法库反思进化 | `graphify` 错题反思导览 + 长期记忆库 (`MEMORY.md`) | **零件托盘 5**：真实完场对账单（含 ✅/❌/走水） + `LESSONS.md` 经验图谱自愈 |
+
+**阶段 0 交接**：主会话读取 `meta.md`，按开球时间、用户范围、编号/URL 做最小筛选，并生成 `work_order`（字段按 `deep-analysis` 接单门）；`work_order` 随托盘 1 进入推演，不再单设 skill。
 
 ---
 
@@ -141,7 +134,7 @@ skills/
 flowchart TD
     Z["【阶段 0：赛程索引自检】<br/>检查 data/{销售日}/meta.md 是否存在且新鲜 (< 2小时)"]
     Z_NO{"是否存在且新鲜?"}
-    Z_GET["调度 Scrapling make_request(bf_jc.txt)<br/>秒级解析并落盘 meta.md 与 memory (< 2秒)"]
+    Z_GET["主会话调度 match-scraper 模式一<br/>抓取 bf_jc.txt，秒级解析并落盘 meta.md 与 memory (< 2秒)"]
     P1["【阶段 1：蜂群纯物理进货】<br/>派发专职搬运工 Subagent (Data Ingest Worker)<br/>ingest_spider.py 一次抓取 27 个分析采集端点并导出 JSONL<br/>27 个分析端点经 ETLX 入库<br/>落盘 {id}.db（简报可选）"]
     P1_GATE{"双重质检门禁核销<br/>22家做市商 + 27端点分析Schema"}
     P2["【阶段 2：纯逻辑首席分析师】<br/>唤醒 Chief Match Analyst<br/>读 deep-analysis 主文件 + 当前阶段 reference<br/>EvoOntology 视网膜全量解析 + Graphify 检索<br/>sports-math 算法去水 + 10 步深度推演"]
@@ -231,7 +224,7 @@ flowchart TD
 | 你对 Agent 说 | 调度室工位执行动作 | 交互门禁响应 |
 | :--- | :--- | :--- |
 | 「同步赛程」「今天有什么比赛」 | 调度工位 1 拉取最新赛程并落盘 `data/{销售日}/meta.md` | 展示列表后就地停下，等待指令 |
-| 「筛选比赛」「帮我筛一下」 | 调度工位 2 启动 6 阶段业务初筛，对当期全部开售比赛打标并排序 | **推送候选清单，等待主人确认** |
+| 「筛选比赛」「帮我筛一下」 | 主会话读取 `meta.md`，按开球时间/用户范围/编号过滤并生成工单；不做实力、近况、盘口判断 | **推送候选清单，等待主人确认** |
 | 「指定推演」「分析 002 和 005」 | 启动阶段 1 蜂群进货 ➔ 阶段 2 首席推演 ➔ 阶段 3 战报交付 | 严格执行三阶段硬死锁，全自动闭环 |
 | 「给推荐」「今天买什么」 | 全流程端到端自动化推进（同步 ➔ 进货 ➔ 推演 ➔ 交付） | 交付工整标准 7 列表格 |
 | 「昨天结果怎么样」「复盘」 | 调度工位 5 执行赛后复盘审计，更新统计指标与对账 | 输出复盘专报与精算师签名 |
@@ -254,10 +247,9 @@ flowchart TD
 ├── graphify-out/            # Graphify 5.6MB 全息博弈知识图谱与反思词条
 ├── memory/                  # 每日记忆流水线唯一单写原子落盘
 │   └── YYYY-MM-DD.md        # 每日战报存盘与认知契约卡
-├── skills/                  # 五大高内聚生产车间工位
+├── skills/                  # 四大高内聚生产车间工位
 │   ├── deep-analysis/       # 工位 3：推演大脑总装局 (SKILL.md ≤500 行 + references)
-│   ├── match-scraper/       # 工位 1：全权数据进货局
-│   ├── match-screening/     # 工位 2：业务初筛局
+│   ├── match-scraper/       # 工位 1：全权数据进货局（模式一赛程索引 + 模式二七表）
 │   ├── post-review/         # 工位 5：复盘审计局
 │   └── recommendation/      # 工位 4：战报交付局
 ├── AGENTS.md                # 核心宪章：五大工段中央总控台与最高行为规约
