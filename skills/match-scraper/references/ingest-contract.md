@@ -72,20 +72,20 @@ Build one empty working DB, then let ETLX read the JSONL directly:
 
 ```bash
 set -e
-SQLITE3="C:/Users/home/AppData/Local/sqlite/3.54.1/sqlite3.exe"
 JSONL="C:/Users/home/AppData/Local/hermes/cache/scratch/match-{matchId}.jsonl"
 mkdir -p data/.build
 rm -f data/.build/build.db
-"$SQLITE3" data/.build/build.db < data/schema.sql
-ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd64.exe"
+ETLX="C:/Users/home/AppData/Local/etlx/1.156.2-linking/etlx-windows-linking-amd64.exe"
 "$ETLX" -config data/pipeline.md -date {销售日} -file "$JSONL"
 ```
 
-`data/schema.sql` creates exactly seven STRICT tables, in this order: `球队基本情况`, `欧指`, `欧指变盘`, `亚盘`, `亚盘变盘`, `大小球`, `大小球变盘`. There is no staging table, no view, no second database, and no Python cleanup after ETLX.
+`data/pipeline.md` has seven `DDL_*` steps that create exactly seven STRICT tables, in this order: `球队基本情况`, `欧指`, `欧指变盘`, `亚盘`, `亚盘变盘`, `大小球`, `大小球变盘`. `BUILD_FINAL` then loads them through DuckDB. There is no `schema.sql`, staging table, view, second database, or Python cleanup after ETLX.
 
-`球队基本情况` has 14 fixed columns: `比赛ID`, `数据类型`, `联赛`, `主队`, `客队`, `开球时间`, `竞彩编号`, `销售日`, `队伍`, `身份`, `号码`, `姓名`, `位置`, `伤停原因`. Row order is match info, home starters, away starters, home bench, away bench, home injuries, away injuries.
+`球队基本情况` has 14 fixed columns: `比赛ID`, `数据类型`, `联赛`, `主队`, `客队`, `开球时间`, `竞彩编号`, `销售日`, `队伍`, `身份`, `号码`, `姓名`, `位置`, `伤停原因`. Its primary key is `比赛ID + 数据类型 + 队伍 + 身份 + 姓名 + 号码`; match-info rows use an empty string for `号码`, lineup and injury rows use the real number. Row order is match info, home starters, away starters, home bench, away bench, home injuries, away injuries. Lineups are optional and may be absent; injuries remain required.
 
-`GATE_FINAL` asserts: `final_table_total=7`, `final_table_count=7`, `final_view_count=0`, `final_identity_match=1`, `euro_rows=21`, non-empty Euro/Asian/over-under history, `team_info_rows=1 + 阵容 + 伤停`, and `team_info_types=1`. `PRAGMA integrity_check` must return `ok`.
+For `亚盘` and `大小球`, when one company has multiple records with the same opening line, the three opening columns come from the earliest record, the three latest columns come from the latest record, and `更新时间` is the latest timestamp. Never take the whole latest row, because that mislabels a later reopening as the opening line.
+
+`GATE_FINAL` asserts: `final_table_total=7`, `final_table_count=7`, `final_view_count=0`, `final_identity_match=1`, `euro_rows=21`, non-empty Euro/Asian/over-under history, `team_info_rows=1 + 阵容 + 伤停`, and `team_info_types=1`. `team_info_types` requires exactly one match-info row and at least one injury row; lineup is optional and may be absent. `PRAGMA integrity_check` must return `ok`.
 
 Promote only after the gate:
 

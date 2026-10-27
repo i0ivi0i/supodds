@@ -49,7 +49,7 @@ metadata:
 |---|---|---|---|
 | 模式二抓取前 | 主会话 | `references/ingest-contract.md` + `references/data-integrity-gates.md` | Stage 3 |
 | 派单前 | 主会话 | `references/worker-orders.md` | Stage 3 |
-| ETLX 前 | 主会话 | `ingest-contract.md` 的 ETLX 段；`data/pipeline.md`；`data/schema.sql` | Stage 4 |
+| ETLX 前 | 主会话 | `ingest-contract.md` 的 ETLX 段；`data/pipeline.md` | Stage 4 |
 
 进货 Worker 只接收主会话内联的工单，**不读任何磁盘规范**；主会话负责读门，Worker 从第 0 秒执行。
 
@@ -140,24 +140,26 @@ py -3.13 skills/match-scraper/scripts/ingest_spider.py \
 
 ```bash
 set -e
-SQLITE3="C:/Users/home/AppData/Local/sqlite/3.54.1/sqlite3.exe"
 JSONL="C:/Users/home/AppData/Local/hermes/cache/scratch/match-{matchId}.jsonl"
 mkdir -p data/.build
 rm -f data/.build/build.db
-"$SQLITE3" data/.build/build.db < data/schema.sql
-ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd64.exe"
+ETLX="C:/Users/home/AppData/Local/etlx/1.156.2-linking/etlx-windows-linking-amd64.exe"
 "$ETLX" -config data/pipeline.md -date {销售日} -file "$JSONL"
 ```
 
-禁止用 `py -3.13 -c` 建库；只使用官方 SQLite CLI。`data/schema.sql` 只建七张 STRICT 最终表，0 视图，顺序固定：`球队基本情况` → `欧指` → `欧指变盘` → `亚盘` → `亚盘变盘` → `大小球` → `大小球变盘`。
+禁止用 `py -3.13 -c` 建库。`data/pipeline.md` 的 7 个 `DDL_*` 步骤先用 `sqlite3:` 建七张 STRICT 最终表，顺序固定：`球队基本情况` → `欧指` → `欧指变盘` → `亚盘` → `亚盘变盘` → `大小球` → `大小球变盘`；`BUILD_FINAL` 再用 DuckDB 装载。没有 `schema.sql`、staging、视图、第二库、ETLX 后的 Python 清理或 VACUUM。
 
 `BUILD_FINAL` 用 DuckDB `CREATE TEMP TABLE` 在内存解析，只执行 7 条 `INSERT INTO DB."<表>"`；临时表随连接销毁，落盘库天然只有七表。没有 staging、没有 `schema_final.sql`、没有第二库、没有 ETLX 后的 Python 清理或 VACUUM。
 
 ### 4.2 GATE_FINAL
 
-必须断言：`final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`euro_rows=21`、`euro_history_rows>0`、`euro_history_sources>=2`、`asian_rows>0`、`asian_history_rows>0`、`ou_rows>0`、`ou_history_rows>0`、`team_info_rows=1+阵容+伤停`、`team_info_types=1`。`PRAGMA integrity_check` 必须 `ok`。
+必须断言：`final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`euro_rows=21`、`euro_history_rows>0`、`euro_history_sources>=2`、`asian_rows>0`、`asian_history_rows>0`、`ou_rows>0`、`ou_history_rows>0`、`team_info_rows=1+阵容+伤停`、`team_info_types=1`。`team_info_types` 只要求比赛信息 1 行、伤停大于 0；阵容是可选数据，0 行也算通过。`PRAGMA integrity_check` 必须 `ok`。
 
-`球队基本情况` 固定 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`。行顺序：比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。
+`球队基本情况` 固定 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`。主键为 `比赛ID + 数据类型 + 队伍 + 身份 + 姓名 + 号码`；比赛信息的 `号码` 用空串，阵容/伤停用真实号码。行顺序：比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。阵容是可选数据，有就写，没有可缺；伤停仍必须。
+
+官方首发一般在开球前 **60 分钟**（德国杯/德甲；欧战 75 分钟）发布。未发布时 `阵容` 为空，不得用上一场首发、媒体预测阵容或页面“上一场评分”冒充本场首发，也不得因阵容为空阻断 `.db`。
+
+`亚盘`、`大小球` 同一机构同一初盘盘口出现多条记录时，初盘三列取时间最早的一条，最新三列取时间最晚的一条，`更新时间` 取最晚时间；不能整行取最新，否则会把后开的初盘误当成初盘。
 
 ### 4.3 晋升
 

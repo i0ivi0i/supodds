@@ -14,14 +14,13 @@ task:
          --home {主队} --away {客队} \
          --output "$JSONL" [--proxy http://127.0.0.1:10808]
        同域名单并发；基础延迟 1.0–2.0 秒抖动；403/429 指数退避；不手写选择器。
-    2) 建空七表工作库（只用官方 SQLite CLI，禁止 python -c）：
-       SQLITE3="C:/Users/home/AppData/Local/sqlite/3.54.1/sqlite3.exe"
+    2) 清空工作库（不手写建表；pipeline 的 7 个 DDL 步骤会建七张 STRICT 表）：
        mkdir -p data/.build && rm -f data/.build/build.db
-       "$SQLITE3" data/.build/build.db < data/schema.sql
     3) ETLX 直装（任一步非 0 立即停，不晋升）：
-       ETLX="C:/Users/home/AppData/Local/etlx/1.156.1-linking/etlx-windows-linking-amd64.exe"
+       ETLX="C:/Users/home/AppData/Local/etlx/1.156.2-linking/etlx-windows-linking-amd64.exe"
        "$ETLX" -config data/pipeline.md -date {销售日} -file "$JSONL"
     4) 只有 GATE_FINAL=0、7 表、0 视图、PRAGMA integrity_check=ok 才晋升：
+       SQLITE3="C:/Users/home/AppData/Local/sqlite/3.54.1/sqlite3.exe"
        "$SQLITE3" data/.build/build.db "SELECT COUNT(*) FROM sqlite_master WHERE type='table';" | grep -qE '^7\r?$'
        "$SQLITE3" data/.build/build.db "SELECT COUNT(*) FROM sqlite_master WHERE type='view';" | grep -qE '^0\r?$'
        "$SQLITE3" data/.build/build.db "PRAGMA integrity_check;" | grep -qE '^ok\r?$'

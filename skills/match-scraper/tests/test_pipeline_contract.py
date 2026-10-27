@@ -118,6 +118,14 @@ class PipelineContractTest(unittest.TestCase):
         self.assertIn("duckdb_tables()", gate)
         self.assertIn("duckdb_views()", gate)
 
+    def test_gate_treats_lineup_as_optional(self):
+        gate = self.text.split("name: GATE_FINAL", 1)[1]
+        start = gate.index("UNION ALL SELECT 'team_info_types'")
+        end = gate.index(")\nSELECT", start)
+        block = gate[start:end]
+        self.assertNotIn("'阵容'", block)
+        self.assertIn("'伤停'", block)
+
 
 if __name__ == "__main__":
     unittest.main()
