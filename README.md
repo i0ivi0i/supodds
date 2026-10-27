@@ -157,7 +157,7 @@ flowchart TD
 
 | 工具服务 | 官方源 / 规范链接 | 工业定位 | 核心接口与技术规格 |
 | :--- | :--- | :--- | :--- |
-| **`scrapling`** | [D4Vinci/Scrapling](https://github.com/D4Vinci/Scrapling) | 官方原生数据采集通道 | Spider `scripts/ingest_spider.py`（27 个分析采集端点主路径；官方 `ItemList.to_jsonl()` 导出）<br/>MCP 仅作单端点诊断降级；支持 `impersonate="chrome"`、三路端点参数分流与 Markdown 原生直出 |
+| **`scrapling`** | [D4Vinci/Scrapling](https://github.com/D4Vinci/Scrapling) | 官方原生数据采集通道 | Spider `scripts/ingest_spider.py`（27 个分析采集端点主路径；官方 `ItemList.to_jsonl()` 导出）<br/>MCP 仅作单端点诊断降级；支持 `impersonate="safari184_ios"`、三路端点参数分流与 Markdown 原生直出 |
 | **`evo-semantic`** | [ruc-datalab/EvoOntology](https://github.com/ruc-datalab/EvoOntology) | 专属双层做市看数只读语义与自进化状态机 | `browse_semantics`, `resolve_semantics`, `validate_semantics`, `evolution_status`, `confirm_trajectory_sources`<br/>5 批次核销法定 22 家做市商机位，Mapping 路径全量字段结构化提取与 Constraint 阻断对质，闭环 `TaskTrajectory` 自动进化 |
 | **`sports-math`** | [宿主独立微服务](file:///C:/Users/home/.gemini/services/sports-math) | 纯数学算力引擎 | `devig_oo_epc`, `poisson_dixon_coles`<br/>东京大学 Shota Goto (2026) 凸优化去水算法与 Dixon-Coles 修正泊松分布 |
 | **`graphify`** | [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) | 知识图谱与错题反思中枢 | `query_graph`, `get_node`, `shortest_path`, `god_nodes`, `get_community`, `get_neighbors`, `graph_stats`<br/>5.6MB 全息博弈图谱，支持三大战区调兵、疑难穿透、理论裁决与三重保鲜生命周期 |

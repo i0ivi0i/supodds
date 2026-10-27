@@ -127,8 +127,8 @@ read_file(path="memory/{复盘日期}.md")
 **绝对严禁调用任何外部独立浏览器（如 `Skill /browseros-neo` ↔ `MCP browseros_neo`）！** 违规调用外部浏览器抓取比分视为严重违纪与输入污染行为！
 
 从推荐记录中取出每场比赛的比赛 ID，通过官方 Scrapling 原生流水线获取完场赛果（优先直取 bf_jc.txt 官方赛程 Feed 提取完场比分；备用单场温和拉取即时详情页）：
-1. 开启全真会话：`mcp__scrapling__open_request_session(impersonate="chrome", stealthy_headers=true)`；
-2. 会话温和拉取（单域名单并发，礼貌延迟 >= 2.0s，严禁多场并发轰炸）：`mcp__scrapling__session_make_request(session_id=..., url="https://live.titan007.com/detail/{matchId}cn.htm", css_selector=".score, .analyhead, .team-name")`；
+1. 开启全真会话：`mcp__scrapling__open_request_session(impersonate="safari184_ios", stealthy_headers=true)`；
+2. 会话温和拉取（单域名单并发，礼貌延迟 1–3 秒随机，严禁多场并发轰炸）：`mcp__scrapling__session_make_request(session_id=..., url="https://live.titan007.com/detail/{matchId}cn.htm", css_selector=".score, .analyhead, .team-name")`；
 3. 抓取完毕后显式释放连接：`mcp__scrapling__close_session(session_id=...)`。
 
 **禁止先跑 `npm run review`。**
@@ -139,7 +139,7 @@ read_file(path="memory/{复盘日期}.md")
 - 全场比分、半场比分、进球数与完场状态
 - 主队、客队、完场比分
 
-批量温和获取（单并发，延迟 >= 2.0s），如遇偶发超时重试一次。
+批量温和获取（单并发，延迟 1–3 秒随机），如遇偶发超时重试一次。
 
 若推荐记录中比赛 ID 丢失或需要查看整日开售赛果，用工位 1 `skills/match-scraper` 官方流水线打开球探竞足页切到昨日销售日，禁止先 `npm run schedule`。
 

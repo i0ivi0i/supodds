@@ -69,7 +69,7 @@ metadata:
 {
   "url": "https://jc.titan007.com/xml/bf_jc.txt?{timestamp}",
   "extraction_type": "text",
-  "impersonate": "chrome",
+  "impersonate": "safari184_ios",
   "stealthy_headers": true
 }
 ```
@@ -128,7 +128,7 @@ py -3.13 skills/match-scraper/scripts/ingest_spider.py \
 
 只在单端点诊断或 Spider 不可用时使用，不得冒充 27 端点批量装配：
 
-1. `open_request_session`（`impersonate=chrome`）。
+1. `open_request_session`（`impersonate=safari184_ios`）。
 2. 同会话 `session_make_request`：脚本/JSON 走 `text`；分析 DOM 走 `html`；历史表走 `markdown` + `#odds2 table`；全景表走 JSON。
 3. `close_session` 释放句柄。
 
@@ -188,8 +188,8 @@ rm -rf data/.build
 - **时序**：初盘是最早记录，最新盘是最后一笔；分析时按 `Sort by Timestamp ASC`；禁止用行号或排版方向代替时间戳。
 - **每次重抓**：Adaptive 只记 DOM 骨架，不缓存赔率；每次重新分析必须重新抓；10 分钟完整 JSONL cooldown 只是防重复，不是旧盘口复用。
 - **`--ai-targeted`**：`scrapling extract` CLI 必须带，过滤隐藏杂质与广告；本适配器 `ingest_spider.py` 没有该参数，用选择器下推达到同等效果。
-- **单并发**：同一域名单并发；基础延迟 1.0–2.0 秒随机抖动；AutoThrottle 自适应；403/429 指数退避 `2→4→8→16` 秒，封顶 15 秒（当前脚本 `autothrottle_max_delay`）。
-- **隐身**：`impersonate=chrome`；补 `Referer: https://info.titan007.com/analysis/{mid}cn.htm` 与合法 UA；HTTP/2 失败可降 HTTP/1.1；代理用 `--proxy` 或 `ALL_PROXY/HTTPS_PROXY/HTTP_PROXY`。
+- **单并发**：同一域名单并发；基础延迟 1.0–3.0 秒随机抖动；AutoThrottle 自适应；403/429 指数退避 `2→4→8→16` 秒，封顶 15 秒（当前脚本 `autothrottle_max_delay`）。
+- **隐身**：`impersonate=safari184_ios`；UA 统一为 iPhone OS 18_4 / Safari 18.4；补 `Referer: https://m.titan007.com/analy/Analysis/{mid}.htm`；默认 HTTP/2，协议错误自动降级 HTTP/1.1（也可用 `--http1` 强制）；代理用 `--proxy` 或 `ALL_PROXY/HTTPS_PROXY/HTTP_PROXY`。
 - **防错位**：`parts[0]` 才是 CID，禁用 `parts[1]`；欧指列序主/平/客，亚盘主水/盘口/客水，大小球大水/盘口/小水；`matchId` 跨比赛隔离；`188Bet` 只走 42。
 - **不造假**：JSONL 必须来自真实响应；`chars` 与 `sha256/raw_sha256` 必须匹配；未开盘写 `[官方未开盘]`；不伪造伤停、赔率或链接。
 

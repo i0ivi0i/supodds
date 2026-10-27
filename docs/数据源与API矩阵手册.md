@@ -22,7 +22,7 @@
 ### 1. 赔率时序与全盘指数（主源：titan007）
 - **特点**：球探页可免登录查看多家机构升降盘历史。当场覆盖以页面实际可见公司与行数为准，不是「全网唯一免费、14 家全覆盖、无频率限制」的保证。
 - **获取内容**：亚盘盘水变化表、大小球盘水变化表、欧赔逐笔时序、皇冠已有比分/半全场/总进球项目。固定比分范围不冒充全池。
-- **抓取通道与防封控频**：100% 独家归属工位 1（`skills/match-scraper`，内嵌 Scrapling 0.5 官方武器库 ↔ MCP `scrapling`）。采用官方 Spider 架构，锁死单域名单并发（`concurrent_requests_per_domain = 1`），基础下载延迟 `download_delay = 1.0s`（项目运营策略，非库默认值）并启用 AutoThrottle 自适应退避（遇限流指数拉大延迟，上限 15s），规避旧版 Windows Server 2012 / IIS 8.5 DIPR 防火墙封锁；严禁调用外部独立浏览器，严禁编写临时 Python 脚本。
+- **抓取通道与防封控频**：100% 独家归属工位 1（`skills/match-scraper`，内嵌 Scrapling 0.5 官方武器库 ↔ MCP `scrapling`）。采用官方 Spider 架构，锁死单域名单并发（`concurrent_requests_per_domain = 1`），基础下载延迟 `download_delay = 1.0–3.0s 随机`（项目运营策略，非库默认值）并启用 AutoThrottle 自适应退避（遇限流指数拉大延迟，上限 15s），默认 HTTP/2、协议错误自动降级 HTTP/1.1，规避旧版 Windows Server 2012 / IIS 8.5 DIPR 防火墙封锁；严禁调用外部独立浏览器，严禁编写临时 Python 脚本。
 - **双轨端点做减法架构**：
   1. **Tier 1 聚合核心通道（高可用 CDN，永不封锁）**：`1x2d.js`（一网打尽 21 家法定欧指初即盘与完整时序流水，460KB+ 毫秒级直出；188Bet 另走槽位）、`analysis.html`、`odds.html`、`analy.json`，单场核心请求压缩至 4 次以内，流量暴降 85%；
   2. **Tier 2 补充明细通道（温和单并发按需拉取）**：21 张流水表与两张全景表温和拉取，遭遇网络断开时平滑自愈；
@@ -35,7 +35,7 @@
 
 ### 2. 主源失败怎么办
 - **线上不先跑脚本**：严禁自写任何临时抓取脚本。
-- **打不开页或缺资料**：在官方 Scrapling 内部四级闭环（`Spider` 主路径 ➔ `make_request` ➔ `browser_fetch` ➔ 内置 real-chrome）升阶重试并落盘。仍缺验收门：置顶提醒并贴页上原句；当面聊天先停，等主人回再继续；定时任务置顶后继续十步，不准跳过。
+- **打不开页或缺资料**：在官方 Scrapling 内部闭环（`Spider` 主路径 ➔ `make_request` ➔ `StealthyFetcher` 降级）升阶重试并落盘。仍缺验收门：置顶提醒并贴页上原句；当面聊天先停，等主人回再继续；定时任务置顶后继续十步，不准跳过。
 - **其他来源**：亚盘/欧指流水、机构盘口、主客场/近6数字齐全、没错、对得上 → 可以代。错了、空了、少了一截 → 不能代。伤停格「暂无数据」不是缺数据，贴原句后继续十步。
 - **体彩官方网关**：核对竞彩场次编号、当日是否开售、节假日休市。三项静态赔不是完整盘口资料。接口：`https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry?channel=c`（须带浏览器头与 `Referer: https://www.lottery.gov.cn/`）。开售为 0 场即休市/未开售。
 

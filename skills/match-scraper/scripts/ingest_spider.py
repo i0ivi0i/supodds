@@ -633,11 +633,6 @@ from typing import Any
 
 from scrapling.spiders import Request, Spider
 
-try:
-    from curl_cffi import CurlHttpVersion
-except ImportError:  # pragma: no cover - curl_cffi ships with Scrapling
-    CurlHttpVersion = None
-
 ROOT = Path(__file__).resolve().parents[3]
 REFERER = "https://m.titan007.com/analy/Analysis/{match_id}.htm"
 
@@ -664,22 +659,23 @@ def build_request_plan(contract: Contract, match_id: str) -> list[RequestPlan]:
     return tier1 + tier2
 
 
-def _session_kwargs(match_id: str) -> dict[str, Any]:
+def _session_kwargs(match_id: str, *, http1: bool = False) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "headers": {
             "Referer": REFERER.format(match_id=match_id),
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1",
         },
         "timeout": 30,
     }
-    if CurlHttpVersion is not None:
+    if http1:
+        from curl_cffi import CurlHttpVersion
         kwargs["http_version"] = CurlHttpVersion.V1_1
     return kwargs
 
 
 class IngestSpider(Spider):
     name = "match-scraper-ingest"
-    # 单并发 + 1.0~2.0s 礼貌抖动 + AutoThrottle 自适应退避。
+    # 单并发 + 1.0~3.0s 礼貌抖动 + AutoThrottle 自适应退避。
     concurrent_requests = 1
     concurrent_requests_per_domain = 1
     autothrottle_enabled = True
@@ -690,8 +686,8 @@ class IngestSpider(Spider):
 
     @property
     def download_delay(self) -> float:
-        """Base 1.0s plus 0-1s jitter so requests do not form a fixed rhythm."""
-        return random.uniform(1.0, 2.0)
+        """Base 1.0s plus 0-2s jitter so requests do not form a fixed rhythm."""
+        return random.uniform(1.0, 3.0)
 
     def __init__(
         self,
@@ -701,6 +697,7 @@ class IngestSpider(Spider):
         home: str = "",
         away: str = "",
         browser_fallback: bool = False,
+        http1: bool = False,
         proxy: str | None = None,
         root: Path = ROOT,
     ) -> None:
@@ -710,6 +707,7 @@ class IngestSpider(Spider):
         self.home = home
         self.away = away
         self.browser_fallback = browser_fallback
+        self.http1 = http1
         self.proxy = (
             proxy
             or os.environ.get("ALL_PROXY")
@@ -725,7 +723,7 @@ class IngestSpider(Spider):
         from scrapling.fetchers import FetcherSession
 
         session_kwargs: dict[str, Any] = {
-            "impersonate": "chrome",
+            "impersonate": "safari184_ios",
             "stealthy_headers": True,
             "timeout": 30,
             "retries": 0,
@@ -749,7 +747,7 @@ class IngestSpider(Spider):
                 callback=self.parse,
                 sid="default",
                 meta={"key": plan.key},
-                **_session_kwargs(self.match_id),
+                **_session_kwargs(self.match_id, http1=self.http1),
             )
 
     def _record_response(self, response, key: str) -> EndpointAssessment | None:
@@ -814,10 +812,37 @@ class IngestSpider(Spider):
             return
         self._record_response(response, key)
 
+    async def _try_http1_fallback(self, request: Request, key: str) -> bool:
+        """Retry a failed HTTP/2 request once over HTTP/1.1."""
+        if self.http1 or request.meta.get("http1_fallback"):
+            return False
+        fallback = Request(
+            request.url,
+            sid=request.sid or "default",
+            callback=self.parse,
+            meta={**request.meta, "http1_fallback": True},
+            **_session_kwargs(self.match_id, http1=True),
+        )
+        await asyncio.sleep(random.uniform(1.0, 3.0))
+        try:
+            response = await self._session_manager.fetch(fallback)
+        except Exception as exc:  # fallback must not hide the original failure
+            self.failures[key] = f"http1_fallback_error:{type(exc).__name__}:{exc}"
+            self.logger.error("endpoint %s HTTP/1.1 fallback failed: %s", key, self.failures[key])
+            return False
+        result = self._record_response(response, key)
+        if result is None or result.errors:
+            self.failures[key] = "http1_fallback_failed_validation"
+            return False
+        self.logger.info("endpoint %s recovered via HTTP/1.1", key)
+        return True
+
     async def on_error(self, request: Request, error: Exception) -> None:
         key = str(request.meta.get("key", ""))
         self.failures[key] = f"{type(error).__name__}:{error}"
         self.logger.error("endpoint %s request error: %s", key, self.failures[key])
+        if await self._try_http1_fallback(request, key):
+            return
         if self.browser_fallback:
             await self._browser_fetch(request, key)
 
@@ -882,6 +907,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--home", default="", help="主队名；提供时做实体核对")
     p.add_argument("--away", default="", help="客队名；提供时做实体核对")
     p.add_argument("--browser-fallback", action="store_true", help="HTTP 请求失败时用 StealthyFetcher 逐端点降级（慢）")
+    p.add_argument("--http1", action="store_true", help="备用：强制 HTTP/1.1；默认走 HTTP/2")
     p.add_argument("--proxy", default=None, help="代理通道 URL，例如 http://127.0.0.1:10808")
     p.add_argument("--output", default=None, help="临时 JSONL 路径；默认在系统临时目录生成")
     p.add_argument("--force", action="store_true", help="跳过同一输出文件 10 分钟冷却；仅在主人明确要求重新分析时使用")
@@ -935,6 +961,7 @@ def main(argv: list[str] | None = None) -> int:
         home=args.home,
         away=args.away,
         browser_fallback=args.browser_fallback,
+        http1=args.http1,
         proxy=args.proxy,
         root=root,
     )

@@ -13,7 +13,7 @@ task:
          --match-id {matchId} --sales-date {销售日} \
          --home {主队} --away {客队} \
          --output "$JSONL" [--proxy http://127.0.0.1:10808]
-       同域名单并发；基础延迟 1.0–2.0 秒抖动；403/429 指数退避；不手写选择器。
+       同域名单并发；基础延迟 1.0–3.0 秒抖动；403/429 指数退避；默认 HTTP/2，协议错误自动降级 HTTP/1.1（也可用 `--http1` 强制）；不手写选择器。
     2) 清空工作库（不手写建表；pipeline 的 7 个 DDL 步骤会建七张 STRICT 表）：
        mkdir -p data/.build && rm -f data/.build/build.db
     3) ETLX 直装（任一步非 0 立即停，不晋升）：

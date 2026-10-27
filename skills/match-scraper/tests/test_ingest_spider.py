@@ -5,6 +5,9 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
+
+from scrapling.spiders import Request
 
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS = ROOT / "skills" / "match-scraper" / "scripts"
@@ -16,6 +19,7 @@ from ingest_spider import (  # noqa: E402
     EndpointAssessment,
     IngestSpider,
     _cached_capture_is_valid,
+    _session_kwargs,
     build_request_plan,
     content_type_for,
     load_contract,
@@ -56,8 +60,15 @@ class IngestSpiderTest(unittest.TestCase):
         self.assertEqual(spider.concurrent_requests, 1)
         self.assertEqual(spider.concurrent_requests_per_domain, 1)
         self.assertGreaterEqual(spider.download_delay, 1.0)
-        self.assertLessEqual(spider.download_delay, 2.0)
+        self.assertLessEqual(spider.download_delay, 3.0)
         self.assertTrue(spider.autothrottle_enabled)
+
+    def test_http2_default_and_http1_fallback(self):
+        default = _session_kwargs("3073801")
+        self.assertNotIn("http_version", default)
+        self.assertIn("iPhone OS 18_4", default["headers"]["User-Agent"])
+        fallback = _session_kwargs("3073801", http1=True)
+        self.assertIn("http_version", fallback)
 
     def _fake_results(self):
         spider = IngestSpider(match_id="3073801", sales_date="2026-10-22", root=ROOT)
@@ -142,6 +153,42 @@ class IngestSpiderTest(unittest.TestCase):
         self.assertNotIn("raw/{matchId}.json", source)
         self.assertNotIn("build_bundle", source)
         self.assertNotIn("validate_bundle", source)
+
+
+class Http1FallbackTest(unittest.IsolatedAsyncioTestCase):
+    async def test_fallback_retries_with_http1_and_records_result(self):
+        spider = IngestSpider(match_id="3073801", sales_date="2026-10-22", root=ROOT)
+        request = Request(
+            "https://example.test/analysis",
+            sid="default",
+            meta={"key": "analysis.html"},
+        )
+        captured = []
+
+        async def fake_fetch(fallback):
+            captured.append(fallback)
+            return object()
+
+        spider._session_manager = type(
+            "FakeManager", (), {"fetch": staticmethod(fake_fetch)}
+        )()
+        result = EndpointAssessment(
+            key="analysis.html",
+            url="https://example.test/analysis",
+            status=200,
+            text="ok",
+            encoding="utf-8",
+            state="ok",
+        )
+        with patch("ingest_spider.asyncio.sleep", new=AsyncMock()), patch.object(
+            spider, "_record_response", return_value=result
+        ):
+            recovered = await spider._try_http1_fallback(request, "analysis.html")
+
+        self.assertTrue(recovered)
+        self.assertEqual(len(captured), 1)
+        self.assertIn("http_version", captured[0]._session_kwargs)
+        self.assertTrue(captured[0].meta["http1_fallback"])
 
 
 if __name__ == "__main__":

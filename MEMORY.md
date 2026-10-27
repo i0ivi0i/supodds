@@ -26,7 +26,7 @@
 - **Scrapling 官方长连接 Session 与 28 采集端点满配存证立宪（铭记 b441d2e 误删惨痛教训）**：
   1. **深刻铭记历史断崖教训**：提交 `b441d2e` 过激执行“做减法”，误将 20,493 行装配代码物理删除，导致后继临时脚本偷工减料只抓取 `1x2d.js`，将原本满配存证腰斩为残次品，遗漏了 21 张二级流水大表！
   2. **法定 28 个采集端点不可动摇黄金标准（27 分析 + 1 交付）**：单场采集包 `raw/{matchId}.json` 必须 100% 满配 28 个采集端点（含 4 大核心数据、7 家做市商 21 张变盘流水、亚盘/大小球全景初即总表，以及 1 个 Polymarket 交付端点）；`receipt.endpoints_count == 28` 只证明采集完整。分析 SSOT 只取其中 27 个，Polymarket 只作最后一步交付链接，不入分析库、不参与推演；分析门禁只看 27 个分析端点。
-  3. **Scrapling 官方进货标准范式**：批量进货主路径必须且只能通过官方 `Spider` 常设工具 `skills/match-scraper/scripts/ingest_spider.py`（单场 28 个采集端点、原子写 `raw/{matchId}.json`；分析阶段仅取 27 个分析端点）；MCP 长连接三部曲（`open_request_session` ➔ `session_make_request` ➔ `close_session`）仅作单端点诊断与降级，复用 TCP 连接池与 Chrome JA3 指纹破除 TLS 重协商阻断，带上上下文 `Referer`，执行 Cython 选择器下推（21 张流水表 `css_selector="#odds2 table"`；两张全景总表 `css_selector="#table_odds"`）与 GB18030/UTF-8 双编码隔离；
+  3. **Scrapling 官方进货标准范式**：批量进货主路径必须且只能通过官方 `Spider` 常设工具 `skills/match-scraper/scripts/ingest_spider.py`（单场 28 个采集端点、原子写 `raw/{matchId}.json`；分析阶段仅取 27 个分析端点）；MCP 长连接三部曲（`open_request_session` ➔ `session_make_request` ➔ `close_session`）仅作单端点诊断与降级，复用 TCP 连接池与 Safari iOS TLS/JA3 指纹破除 TLS 重协商阻断，带上上下文 `Referer`，执行 Cython 选择器下推（21 张流水表 `css_selector="#odds2 table"`；两张全景总表 `css_selector="#table_odds"`）与 GB18030/UTF-8 双编码隔离；
   4. **零散脚本与零代码绝对禁令**：全流程绝对严禁编写任何临时 `.py` 爬虫脚本、清洗脚本或 Node 胶水脚本，违规编写记录严格锁定为 0！
   5. **GB18030 二进制流保真解码教训（2026-10-20 实战刻录）**：球探二级页面（`changeDetail/*.aspx`）为旧版 GB18030 编码，外部若以默认 UTF-8 强行转换为 string 会导致队名和盘口乱码，进而引发解析脱靶。必须依循 Scrapling 官方设计，读取 `page.body` 原始二进制流后通过 `new TextDecoder('gb18030').decode(buf)` 或 Scrapling 原生 `Selector(content, encoding='gb18030')` 进行精准解码；
   6. **Scrapling 原生 JSON 支持与 CLI 扩展名分流教训（2026-10-20 实战刻录）**：Scrapling 框架本体绝对原生深度支持 JSON（具备 `page.json()`、`Adaptor.json()` 与 `to_json()` 导出）；限制仅存在于官方 CLI 导出器（`Convertor.write_content_to_file` 仅支持 `.txt/.html/.md`）。因此通过 CLI 命令行抓取 JS/JSON 静态数据流时，落盘必须指定 `.txt` 后缀（如 `1x2d.txt`、`analy.txt`），程序消费时直接调官方 `.json()` 解析；若直接指定 `.js` 或 `.json` 后缀会被底层抛出 `ValueError: Unknown file type` 导致静默丢失；
@@ -139,7 +139,7 @@
   3. **法定直写装配落盘（破除脚本死锁）**：搬运工通过官方 Scrapling Spider 获取真实活水数据后，由 `ingest_spider.py` 直接原子写入 `raw/{matchId}.json` 并过验，严禁编写临时 Python 脚本；
   4. **故障隔离与单写封存**：通过 EvoOntology 语义门禁隔离异常场次并放行合格集群；编排者作为唯一单写者收齐 Worker 结果原子化前置封存写入 `memory/YYYY-MM-DD.md`！
   5. **官方开箱即用工单直达与 Spider 流式控频（消除顺序倒置漏洞）**：彻底删除派发 Prompt 中的翻书与读文档指令，主会话派发时直接注入 `ingest_spider.py` 命令与 `matchId`/`salesDate`；端点契约由 `config/endpoints.json` 唯一提供。Worker 唤醒 0 秒即刻运行并原子落盘真实大包，严禁调用 `read_file` 查阅任何 md/git 规范，根除空转磨洋工！
-  6. **单 IP 本地海量防封四大法宝（Scrapling 官方防封立宪）**：针对本机无外部代理池的物理现实，严禁瞬间齐发几十个 Worker 轰炸球探网！主会话充当 Central Scheduler 实施 2~3 个 Worker 滑动窗口排队放行；工单强制配置 `impersonate=['chrome', 'firefox', 'safari']` 动态随机轮换单 IP 浏览器指纹；遇 429 频控自动退避重试，遇 403/盾自动升阶 `browser_fetch` 本地解盾；严守 23 家机构全景布尔核销，不漏一家！
+  6. **单 IP 本地海量防封四大法宝（Scrapling 官方防封立宪）**：针对本机无外部代理池的物理现实，严禁瞬间齐发几十个 Worker 轰炸球探网！主会话充当 Central Scheduler 实施 2~3 个 Worker 滑动窗口排队放行；工单固定使用统一的 `safari184_ios` 指纹（不每请求轮换 UA/指纹），保持单 IP 单并发；遇 429 频控自动退避重试，遇 403/盾自动升阶 `browser_fetch` 本地解盾；严守 23 家机构全景布尔核销，不漏一家！
 - **知识图谱中枢宪法（Graphify 知识图谱绝对硬挂载）**：本足球系统项目底层知识引擎与推演中枢必须且只能基于 **`Skill /graphify`** 与官方开源核心 **`https://github.com/Graphify-Labs/graphify`**！三大战区检索（战前初诊 BFS、物理基准 DFS、博弈时序多跳）必须 100% 挂载 MCP `graphify`（`graphify-out/graph.json` 知识网络），为足球大模型提供认知基因、学术论文锚点（Egidi/Winkelmann/Levitt）与博弈公理穿透，严禁绕过图谱凭空脑补！
 - **Git 提交最高红线（严禁擅自提交 Git）**：没有主人的明确允许，AI 绝对禁止在任何分支执行 `git commit`！修改文件与测试验证完毕后，必须停步向主人汇报改动状态与 Diff，只有主人明确指令允许提交时方可提交，违者视为严重越权！
 - **工具与指令专属于 Agent 武器库宪法（Zero-Human-CLI 绝对铁律）**：系统中所有工具、命令与 MCP 100% 是赋能 AI Agents 蜂群的机械臂与基础设施，绝不是给主人当苦力敲命令用的！主人是战略指挥官与终审裁决者，严禁任何 Agent 向主人抛出终端执行命令。一切数据进货、多源对账、链上解析与异常自愈必须由 Agent 在后台 100% 自驱闭环！
@@ -186,8 +186,8 @@
 - **Scrapling 官方隐身防护、礼貌控频与 23 家做市商轻量聚合全系统重构（2026-10-23 实战血泪刻录）**：
   1. **真实物理根因探明（IIS 8.5 DIPR 防火墙拦截）**：球探网核心变盘流水部署于旧版 Windows Server 2012 / IIS 8.5 环境，开启了激进的动态 IP 限制（DIPR）。先前系统单场 28 端点蛮力并发轰炸（13 场高达 364 次高频请求），多 Worker 瞬间迸发直接触发防火墙 TCP Abort 掐断连接（现代客户端表现为 `Connection closed abruptly` 或 `PROTOCOL_ERROR`），导致家庭 IP 遭到临时拉黑；
   2. **双轨端点做减法与轻量聚合（降载 85% 根治封锁）**：深度探明球探高可用 CDN 架构，确立 Tier 1 聚合核心端点（`1x2d.js` 一网打尽 21 家法定欧指初即与全量变盘时序流水 + `odds_jc.txt` + `goallottery`），单场核心网络请求由 28 次骤降为 2~4 次，关键盘口 100% 毫秒级落盘，彻底告别蛮力轰炸；
-  3. **Scrapling 0.5 官方礼貌控频与 AutoThrottle 心法**：贯彻 Scrapling 官方“慢即是快，礼貌爬虫”哲学，Spider 锁死单域名单并发（`concurrent_requests_per_domain = 1`），基础下载延迟 `download_delay = 1.0s`（单秒活跃请求 $\le 1.0$ 个）；启用官方 AutoThrottle 自适应退避（遇限流/掐断自动指数翻倍，`autothrottle_max_delay = 15s`），平缓时钟彻底避开源站风控峰值；这些是项目运营策略，不是 Scrapling 库默认值；
-  4. **TLS 指纹隐身与 ProxyRotator 代理弹性兜底**：全面启用 `impersonate="chrome"` 全真模拟真实浏览器 TLS/JA3 指纹，补齐合法 Referer 与 User-Agent；脚本内置 `--proxy` 参数与 `ALL_PROXY`/`HTTPS_PROXY` 环境变量自动继承支持，当本地家庭宽带遇偶发风控时一键实现出口 IP 动态漂移；
+  3. **Scrapling 0.5 官方礼貌控频与 AutoThrottle 心法**：贯彻 Scrapling 官方“慢即是快，礼貌爬虫”哲学，Spider 锁死单域名单并发（`concurrent_requests_per_domain = 1`），基础下载延迟 `download_delay = 1.0–3.0s 随机`（单秒活跃请求 $\le 1.0$ 个）；启用官方 AutoThrottle 自适应退避（遇限流/掐断自动指数翻倍，`autothrottle_max_delay = 15s`），平缓时钟彻底避开源站风控峰值；这些是项目运营策略，不是 Scrapling 库默认值；
+  4. **TLS 指纹隐身与代理弹性兜底**：启用 `impersonate="safari184_ios"` 模拟真实 iPhone Safari TLS/JA3 指纹，补齐合法 Referer 与 User-Agent；脚本内置 `--proxy` 参数与 `ALL_PROXY`/`HTTPS_PROXY`/`HTTP_PROXY` 环境变量自动继承支持，当本地家庭宽带遇偶发风控时一键实现出口 IP 漂移；
   5. **23 家做市商完整性 100% 强断言不变量**：端点精简与控频绝不牺牲数据保真度，底层 `raw/{matchId}.json` SSOT 存证与 EvoOntology 5 批次核销断言 `skipped ≡ []` 继续保持 100% 严格过验，实现安全、快速、完整三者完满兼备。
 - 不编造赔率、比分或赛事结果；拿不准的标注「需核实」或「仅供参考」
 - 不鼓励重注、梭哈；提示「理性投注、量力而行」
@@ -363,7 +363,7 @@
   3. `法定 23 家机构初即盘与凯利总表`（初即盘赔率 + 返还率 + 凯利风险警戒值，严禁算术平均）；
   4. `法定 23 家机构五阶段时序生命周期矩阵`（严格解耦为三大战区，每家每玩法提炼 T0~T4 核心节点各 1 行，绝不倾倒冗余碎步流水）；
   5. `Crown 皇冠全指数波胆与比分矩阵`（比分赔率、进球数与半全场）。
-- **Scrapling 100% 极速全包铁律（BrowserOS 退居纯备用辅助）**：单场黄金模板全部 5 大模块（`analysis/{id}cn.htm` 伤停与技统、`analysis/odds/{id}.htm` 皇冠波胆、`getAnalyData` 体彩全玩法、`1x2d.js` 百家欧指、`changeDetail` 亚盘大小球）均由工位 1 **`skills/match-scraper`（内嵌 Scrapling 0.5 官方武器库）↔ `MCP scrapling` (官方 Session 长连接) 1~2 秒流式并发全取**（基于 `https://github.com/D4Vinci/Scrapling`）。由于 `BrowserOS neo` 启动与渲染太慢，仅作为极端封锁时的备用辅助兜底，常规流程严禁启动！
+- **Scrapling 100% 极速全包铁律（BrowserOS 退居纯备用辅助）**：单场黄金模板全部 5 大模块（`analysis/{id}cn.htm` 伤停与技统、`analysis/odds/{id}.htm` 皇冠波胆、`getAnalyData` 体彩全玩法、`1x2d.js` 百家欧指、`changeDetail` 亚盘大小球）均由工位 1 **`skills/match-scraper`（内嵌 Scrapling 0.5 官方武器库）↔ `MCP scrapling` (官方 Session 长连接) 1~3 秒流式并发全取**（基于 `https://github.com/D4Vinci/Scrapling`）。由于 `BrowserOS neo` 启动与渲染太慢，仅作为极端封锁时的备用辅助兜底，常规流程严禁启动！
 - **与庄共舞第一性原理（反散户战意线性偏见）**：散户赌“谁更想赢/谁无战意”，庄家收割“谁信谁想赢”。系统必须破译庄家借战意预期设立的非对称做市陷阱，永远站在庄家防守与少赔多赚视角推演！
 
 **2026-10-03 系统演化三阶总战略（主人亲授立宪）**：
