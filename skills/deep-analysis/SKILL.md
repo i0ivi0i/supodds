@@ -179,17 +179,19 @@ metadata: { "emoji": "📊" }
 
 **`announce.memory_summary` 字段名**：
 
+- `card_version`
 - `identity`：matchId、league、homeTeam、awayTeam、kickoffTime、analysisTime
-- `facts`：injury_verification、motivation、not_collected
-- `odds_summary`：consensus、companies、as_of、devig、**coverage（FULL/PARTIAL + 实到/21 + 缺项）**
-- `decision`：primary、secondary、three_dimensions、probabilities
+- `data_ref`：db_path、db_sha256、odds_cutoff、devig、**coverage（FULL/PARTIAL + 实到/21 + 缺项）**、research
+- `decision`：context、primary、secondary、three_dimensions、probabilities、confidence
+- `context`：injury_verification、motivation、not_collected
 - `three_dimensions`：winner、margin、total_goals
 - `probabilities`：home、draw、away、source
-- `reasoning`：graph_genes、contract_card、derivation_chain、key_points、doubts、contradictions、risks、confidence
-- `contract_card`：lean_and_risk、key_decision、bookmaker_hypothesis、evo_block、falsifiers
+- `mechanism`：graph_genes、contract_card、poisson
+- `contract_card`：selection_and_exclusion、key_decision、bookmaker_hypothesis、competing_explanation、net_payout_logic、evo_block、derivation_chain、key_points、doubts、contradictions、risks
 - `poisson`：status、lambda、top6
 - `lambda`：home、away
-- `research`：paper_application、analysis_version、odds_companies_time、injury_source
+- `falsifiers`：id、statement、metric、trigger、deadline、source
+- `premortem`：failed_because
 
 **进入门**：完整 `announce` 写法与 YAML 只在 `references/03-裁决与交接.md`；`REF03_LOADED` 不在日志则先补读。字段缺失或夹带展示表 → 停线。
 
