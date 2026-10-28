@@ -94,15 +94,27 @@ class IngestContractTest(unittest.TestCase):
         self.assertTrue(all(len(points) >= 2 for points in histories.values()))
         self.assertGreaterEqual(sum(len(points) for points in histories.values()), 42)
 
-    def test_parse_euro_history_missing_cid_fails(self):
-        missing = EURO_CIDS[-1]
+    def test_parse_euro_history_missing_core_cid_fails(self):
+        missing = 80
         result = assess_payload(
             self.contract,
             "1x2d.js",
-            js_payload(detail_cids=list(EURO_CIDS)[:-1]),
+            js_payload(detail_cids=[cid for cid in EURO_CIDS if cid != missing]),
         )
         self.assertEqual(result.state, "failed")
         self.assertIn(f"missing_euro_history:{missing}", result.errors)
+
+    def test_parse_euro_history_missing_optional_cid_warns(self):
+        missing = 90
+        result = assess_payload(
+            self.contract,
+            "1x2d.js",
+            js_payload(detail_cids=[cid for cid in EURO_CIDS if cid != missing]),
+        )
+        self.assertEqual(result.state, "ok", result.errors)
+        self.assertTrue(
+            any(f"missing_optional_euro_history:{missing}" in warning for warning in result.warnings)
+        )
 
     def test_parse_euro_history_invalid_detail_fails(self):
         result = assess_payload(self.contract, "1x2d.js", js_payload(bad_detail=True))
@@ -115,10 +127,32 @@ class IngestContractTest(unittest.TestCase):
             timestamps = [point.timestamp for point in points]
             self.assertEqual(timestamps, sorted(timestamps))
 
-    def test_1x2d_missing_cid_fails(self):
-        result = assess_payload(self.contract, "1x2d.js", js_payload(cids=list(EURO_CIDS)[:-1]))
+    def test_1x2d_missing_core_cid_fails(self):
+        result = assess_payload(self.contract, "1x2d.js", js_payload(cids=[cid for cid in EURO_CIDS if cid != 80]))
         self.assertEqual(result.state, "failed")
         self.assertTrue(any(error.startswith("missing_euro_cid") for error in result.errors))
+
+    def test_1x2d_missing_optional_cids_warns(self):
+        missing = {90, 482}
+        result = assess_payload(
+            self.contract,
+            "1x2d.js",
+            js_payload(cids=[cid for cid in EURO_CIDS if cid not in missing]),
+        )
+        self.assertEqual(result.state, "ok", result.errors)
+        self.assertTrue(
+            any("missing_optional_euro_cid:90,482" in warning for warning in result.warnings)
+        )
+
+    def test_1x2d_below_coverage_floor_fails(self):
+        missing = {90, 482, 115, 82}
+        result = assess_payload(
+            self.contract,
+            "1x2d.js",
+            js_payload(cids=[cid for cid in EURO_CIDS if cid not in missing]),
+        )
+        self.assertEqual(result.state, "failed")
+        self.assertIn("euro_coverage_below_floor:17", result.errors)
 
     def test_1x2d_entity_mismatch_fails(self):
         result = assess_payload(
@@ -163,6 +197,16 @@ class IngestContractTest(unittest.TestCase):
         result = assess_payload(self.contract, "eu_1.html", "")
         self.assertEqual(result.state, "not_offered")
         self.assertEqual(result.errors, [])
+
+    def test_header_only_eu_detail_is_not_offered(self):
+        result = assess_payload(
+            self.contract,
+            "eu_12.html",
+            "| 数据变化 | 返还率 | 凯利指数 |\n| --- | --- | --- |",
+        )
+        self.assertEqual(result.state, "not_offered")
+        self.assertEqual(result.errors, [])
+        self.assertIn("empty_secondary_eu_detail", result.warnings)
 
     def test_duplicate_table_rows_fail(self):
         duplicated = (

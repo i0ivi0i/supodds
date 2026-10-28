@@ -134,6 +134,14 @@ async def on_close(self):
 - Record request failures in `on_error`; do not silently skip them.
 - Use `on_close` set equality; duplicates and missing IDs both fail.
 
+## Coverage tiers versus success
+
+- The 21 Euro CIDs are a roster, not a demand that every source publish every match.
+- Four market anchors are mandatory: 80 Macauslot, 545 Crown, 281 Bet365, 177 Pinnacle.
+- Data admission requires at least 18 of 21 and all four anchors.
+- Missing non-core CIDs are recorded in JSONL `warnings`; never fabricate rows to satisfy 21.
+- Data admission is not analysis admission: `deep-analysis` still reconciles the 22-bookmaker roster and labels 18-20/21 as `PARTIAL`.
+
 ## Empty state versus success
 
 - Empty is valid only when the source explicitly reports no offering.
@@ -162,8 +170,8 @@ Keep two fixtures: a header-only page that must fail, and a populated page that 
 | Flattened mobile Markdown streams | `_mobile_stream_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_jammed_mobile_stream_rows_pass` |
 | Duplicate odds rows | `_duplicate_rows()` and `assess_payload()`; `tests/test_ingest_classification.py::test_duplicate_table_rows_fail` |
 | Empty state vs success | `NO_OPEN_MARKERS`, `WAF_MARKERS`, and `assess_payload()`; `tests/test_ingest_classification.py::test_legal_empty_states` |
-| Missing source / request failure | `on_error()` and `_fill_missing()`; failures are surfaced in JSONL `state` / `errors`, not silently skipped |
-| JS global array (`1x2d.js`) | `extract_euro_cids()` and `parse_euro_history()`; `tests/test_ingest_classification.py::test_1x2d_missing_cid_fails` |
+| Missing core source / request failure | `assess_payload()` splits core-missing into `errors` (failed) and optional-missing into `warnings` (ok); failures remain in JSONL `state` / `errors` |
+| JS global array (`1x2d.js`) | `extract_euro_cids()` and `parse_euro_history()`; `tests/test_ingest_classification.py::test_1x2d_missing_core_cid_fails` and `test_1x2d_missing_optional_cids_warns` |
 | Browser fallback | `_browser_fetch()` behind the adapter's browser-fallback option |
 
 Scope boundary: these checks run before JSONL. The ETLX `GATE_FINAL` runs after JSONL and checks the seven final tables; neither gate replaces the other.

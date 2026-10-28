@@ -51,6 +51,7 @@ metadata: { "emoji": "📊" }
 
 - **22 家**：21 欧指 + 188Bet 亚盘。
 - **核销**：Evo Task 内分 5 批调用 `resolve_ontology_task`；`skipped ≡ []` 且 22 家 `supported` 才算完整。
+- **欧指覆盖分级（硬规则）**：实到 **21/21 = FULL**；**18–20/21 且核心 4 家齐 = PARTIAL**（必须列缺项、降信心，信心不得高于「中」，不得当串关核心，不得写成 FULL）；**<18 或核心 4 家缺一 = BLOCKED**（停线）。**18 是数据准入线，不是分析标准；本技能仍按 22 家名册核销，不得把 18 当完整。**
 - **托盘**：工位间交接包；托盘 2 = `work_order`，托盘 3 = `announce` 两段。
 - **OO-EPC**：`sports-math` 的 `devig_oo_epc` 去水概率；是市场映射，不是最终预测。
 - **三端**：胜、平、负都写“为何出/为何不出”；平局必须写客胜更弱的当场证据。
@@ -102,13 +103,13 @@ metadata: { "emoji": "📊" }
 
 ## 工位 2：看数
 
-**做什么**：建 Evo Task，分 5 批核销 22 家，读本场七表并核对比赛身份、时序与约束。
+**做什么**：建 Evo Task，分 5 批核销 22 家，读本场七表并核对比赛身份、时序与约束。**必须另跑一条覆盖计数**：`SELECT COUNT(*) AS n, group_concat(机构编号) FROM 欧指`；`n=21` 才是 FULL，`18–20` 是 PARTIAL，`<18` 是 BLOCKED。不得用“22 家 supported”代替这条计数。
 
-**过门条件**：Evo Task 已建立，七表可见，22 家 `coverage_status` 完整，时间轴成立。
+**过门条件**：Evo Task 已建立，七表可见，22 家 `coverage_status` 完整，**欧指覆盖计数已完成并落盘在回执**，时间轴成立。FULL/PARTIAL 可继续；BLOCKED 停线。
 
-**失败动作**：七表不可见、22 家有 Gap/Block、Task 轨迹缺失、读侧身份不一致或时序断裂 → 停线，退回 `match-scraper`/`post-review`；Graphify/论文不可用只降级并记录。
+**失败动作**：七表不可见、22 家核销缺口、**欧指覆盖 BLOCKED**、Task 轨迹缺失、读侧身份不一致或时序断裂 → 停线，退回 `match-scraper`/`post-review`；Graphify/论文不可用只降级并记录。
 
-**产出**：Evo Task 轨迹、七表核验结果、22 家 coverage、时间轴与知识触点记录。
+**产出**：Evo Task 轨迹、七表核验结果、22 家 coverage、**欧指覆盖（FULL/PARTIAL + 实到/21 + 缺项）**、时间轴与知识触点记录。
 
 **进入门**：先读 `references/01-看数与物理基准.md`；未读即停线。回执 `REF01_LOADED`；读完回本工位。
 
@@ -142,7 +143,7 @@ metadata: { "emoji": "📊" }
 | 第 1 步 基本面 | 核对身份、战意与可见事实；不补战绩 | 背景、战意、可见事实 | 身份不符或证据不足 |
 | 第 2 步 伤停 | 读阵容/伤停；未披露标“未核实” | 缺阵名单与影响 | 伤停未核实只标注，不停线 |
 | 第 3 步 泊松 | 能算才算；不算写“不做泊松” | 仅辅助；未算写“不做泊松” | 未算泊松不停线 |
-| 第 4 步 欧指 | 取初盘→变盘→最新；`devig_oo_epc`；查 RLM/诱买 | 初盘/变盘/最新与去水概率 | 时序断裂或 22 家 Gap |
+| 第 4 步 欧指 | 取初盘→变盘→最新；`devig_oo_epc`；查 RLM/诱买 | 初盘/变盘/最新与去水概率 | 时序断裂或欧指 BLOCKED；PARTIAL 必须列缺项并降信心 |
 | 第 5 步 亚盘 | 定盘口类型；看盘口+水位；7 家交叉 | 盘口类型、水位、阻诱 | 盘口数据缺失 |
 | 第 6 步 大小球 | 定盘口类型；看大/小水位；与欧亚交叉 | 盘口类型、水位、进球空间 | 大小球不可见 |
 | 第 7 步 合理性 | 列三盘两两矛盾；让球防守优先 | 三盘矛盾与价值 | 矛盾无法解释 → 观望/停线 |
@@ -174,13 +175,13 @@ metadata: { "emoji": "📊" }
 
 **产出**：可被 `recommendation` 直接消费的 `announce.comprehensive_assessment` 与 `announce.memory_summary`；交接完成标志成立。
 
-**`announce.comprehensive_assessment` 字段名**：推荐方向（胜平负首选/次选、让球、大小球）、泊松辅助比分、OO-EPC 去水概率、形态标记、认知留存、关键点/疑点/矛盾、信心度、风险。
+**`announce.comprehensive_assessment` 字段名**：推荐方向（胜平负首选/次选、让球、大小球）、泊松辅助比分、OO-EPC 去水概率、**数据覆盖（FULL/PARTIAL + 实到/21 + 缺项）**、形态标记、认知留存、关键点/疑点/矛盾、信心度、风险。
 
 **`announce.memory_summary` 字段名**：
 
 - `identity`：matchId、league、homeTeam、awayTeam、kickoffTime、analysisTime
 - `facts`：injury_verification、motivation、not_collected
-- `odds_summary`：consensus、companies、as_of、devig
+- `odds_summary`：consensus、companies、as_of、devig、**coverage（FULL/PARTIAL + 实到/21 + 缺项）**
 - `decision`：primary、secondary、three_dimensions、probabilities
 - `three_dimensions`：winner、margin、total_goals
 - `probabilities`：home、draw、away、source

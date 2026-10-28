@@ -21,11 +21,13 @@ Read this before a single-match capture or an ETLX promotion. The machine contra
 | 26 | `asian_odds.html` | 2 | `https://m.titan007.com/HandicapDataInterface.ashx?scheid={mid}&type=1&oddskind=0` — JSON | Asian initial/latest panorama |
 | 27 | `over_under.html` | 2 | `https://m.titan007.com/HandicapDataInterface.ashx?scheid={mid}&type=1&oddskind=1` — JSON | over/under initial/latest panorama |
 
-Decode raw bytes with the encoding declared by the endpoint or the page meta. When a history page declares `gb2312`/`GB18030`, use `GB18030`; never force UTF-8 over Chinese text. `1x2d.js` must contain the legal 21-CID rows; `analysis.html` must not be a header-only shell; `odds.html` must contain `lineupObj`; `asian_odds.html` and `over_under.html` must be valid JSON.
+Decode raw bytes with the encoding declared by the endpoint or the page meta. When a history page declares `gb2312`/`GB18030`, use `GB18030`; never force UTF-8 over Chinese text. `1x2d.js` must contain the four core Euro CIDs (80/545/281/177) and at least 18 of the 21-slot roster; missing non-core CIDs are recorded as warnings, never padded with fake rows. `analysis.html` must not be a header-only shell; `odds.html` must contain `lineupObj`; `asian_odds.html` and `over_under.html` must be valid JSON.
 
 ## 2. 22-bookmaker roster
 
 Euro CIDs belong to the 21 Euro slots. Asian and over/under CIDs are the 7 history slots. `188Bet` has no Euro CID; its Euro slot is a skipped placeholder, while its AH/OU cid `42` is captured normally.
+
+**Coverage rule:** the four market anchors `80` (Macauslot), `545` (Crown), `281` (Bet365) and `177` (Pinnacle) are mandatory. The data-admission floor is **18 of 21** Euro CIDs. Missing non-core CIDs are warnings, not fabricated rows. `deep-analysis` still reconciles the 22-bookmaker roster and marks 18–20/21 as `PARTIAL`.
 
 | Bookmaker | Euro cid | AH/OU cid |
 |---|---:|---:|

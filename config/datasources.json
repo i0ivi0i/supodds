@@ -70,16 +70,6 @@
       "url": "https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry?channel=c",
       "referer": "https://www.lottery.gov.cn/"
     },
-    "prediction_market_execution": {
-      "polymarket": {
-        "name": "Polymarket 预测市场",
-        "type": "web3_prediction_market",
-        "gamma_sports_api": "https://gamma-api.polymarket.com/sports",
-        "gamma_events_api": "https://gamma-api.polymarket.com/events",
-        "clob_api": "https://clob.polymarket.com",
-        "web_base": "https://polymarket.com/event"
-      }
-    },
     "standby_open_apis": {
       "football_data_org": {
         "name": "Football-Data.org",

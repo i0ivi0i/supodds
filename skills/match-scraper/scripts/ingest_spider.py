@@ -45,6 +45,12 @@ NO_OPEN_MARKERS = (
     "no odds",
 )
 CORE_CHANGE_CIDS = frozenset({1, 3, 8, 12, 47, 48})
+# The four market anchors used by the dual-line read:
+# Macauslot, Crown, Bet365, Pinnacle.
+CORE_EURO_CIDS = frozenset({80, 545, 281, 177})
+# Data-admission floor, not an analysis standard.  deep-analysis still
+# reconciles the 22-bookmaker roster and labels 18-20/21 as PARTIAL.
+MIN_EURO_CIDS = 18
 
 
 def _now() -> str:
@@ -171,6 +177,7 @@ class EndpointAssessment:
     encoding: str
     state: str
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     raw_bytes: int = 0
     raw_sha256: str = ""
     attempts: int = 1
@@ -192,6 +199,7 @@ class EndpointAssessment:
             "status": self.status,
             "state": self.state,
             "errors": list(self.errors),
+            "warnings": list(self.warnings),
             "raw_bytes": self.raw_bytes,
             "chars": self.chars,
             "sha256": self.sha256,
@@ -216,6 +224,8 @@ class EndpointAssessment:
             "status": int(self.status),
             "state": self.state,
             "empty_state": self.state if self.state == "not_offered" else None,
+            "errors": list(self.errors),
+            "warnings": list(self.warnings),
             "extraction_type": extraction_type,
         }
 
@@ -485,6 +495,7 @@ def assess_payload(
         )
 
     errors: list[str] = []
+    warnings: list[str] = []
     state = "ok"
     if status != 200:
         errors.append(f"http_status_{status}")
@@ -497,9 +508,18 @@ def assess_payload(
 
     if key == "1x2d.js":
         all_cids, duplicates = extract_euro_cids(text)
-        missing = sorted(set(contract.euro_cids) - set(all_cids))
-        if missing:
-            errors.append("missing_euro_cid:" + ",".join(str(cid) for cid in missing))
+        present = set(contract.euro_cids) & set(all_cids)
+        missing = sorted(set(contract.euro_cids) - present)
+        missing_core = sorted(CORE_EURO_CIDS - present)
+        missing_optional = sorted(set(missing) - set(missing_core))
+        if len(present) < MIN_EURO_CIDS:
+            errors.append(f"euro_coverage_below_floor:{len(present)}")
+        if missing_core:
+            errors.append("missing_euro_cid:" + ",".join(str(cid) for cid in missing_core))
+        if missing_optional:
+            warnings.append(
+                "missing_optional_euro_cid:" + ",".join(str(cid) for cid in missing_optional)
+            )
         if duplicates:
             errors.append("duplicate_cid:" + ",".join(str(cid) for cid in duplicates))
         try:
@@ -507,9 +527,21 @@ def assess_payload(
         except ValueError as exc:
             errors.append(str(exc))
         else:
-            for cid in contract.euro_cids:
-                if cid not in histories:
-                    errors.append(f"missing_euro_history:{cid}")
+            history_missing = [cid for cid in contract.euro_cids if cid not in histories]
+            history_missing_core = [cid for cid in history_missing if cid in CORE_EURO_CIDS]
+            history_missing_optional = [
+                cid for cid in history_missing if cid not in CORE_EURO_CIDS
+            ]
+            if history_missing_core:
+                errors.append(
+                    "missing_euro_history:"
+                    + ",".join(str(cid) for cid in history_missing_core)
+                )
+            if history_missing_optional:
+                warnings.append(
+                    "missing_optional_euro_history:"
+                    + ",".join(str(cid) for cid in history_missing_optional)
+                )
         entity = extract_entity(text)
         if match_id and entity.get("ScheduleID") != str(match_id):
             errors.append("entity_mismatch")
@@ -560,6 +592,16 @@ def assess_payload(
         elif not rows:
             if _has_no_open_marker(text):
                 state = "not_offered"
+            elif spec.group == "eu":
+                # Secondary 1X2 detail page: an empty shell means the
+                # bookmaker did not publish this detail.  It is not a
+                # capture failure; the primary 1x2d.js history remains
+                # authoritative.
+                if any(tag in text for tag in ("即", "早", "指数变化", "details", "odds")):
+                    state = "ok"
+                else:
+                    state = "not_offered"
+                    warnings.append("empty_secondary_eu_detail")
             elif key not in ("eu_42.html",) and any(tag in text for tag in ("即", "早", "指数变化", "details", "odds")):
                 # 移动端 HTML 变盘流水流式列表
                 state = "ok"
@@ -615,6 +657,7 @@ def assess_payload(
         encoding=spec.encoding,
         state=state,
         errors=errors,
+        warnings=warnings,
         raw_bytes=len(raw_bytes) if raw_bytes is not None else len(text.encode("utf-8")),
         raw_sha256=_text_hash(raw_bytes) if raw_bytes is not None else "",
         attempts=attempts,

@@ -106,6 +106,8 @@ class PipelineContractTest(unittest.TestCase):
             "final_view_count",
             "final_identity_match",
             "euro_rows",
+            "euro_rows_floor",
+            "euro_core_anchors",
             "euro_history_rows",
             "asian_rows",
             "asian_history_rows",
@@ -117,6 +119,11 @@ class PipelineContractTest(unittest.TestCase):
             self.assertIn(key, gate)
         self.assertIn("duckdb_tables()", gate)
         self.assertIn("duckdb_views()", gate)
+
+    def test_gate_allows_eighteen_of_twenty_one_euro_rows(self):
+        gate = self.text.split("name: GATE_FINAL", 1)[1]
+        self.assertIn("euro_rows_floor", gate)
+        self.assertIn("COUNT(*) FROM DB.\"欧指\") >= 18", gate)
 
     def test_gate_treats_lineup_as_optional(self):
         gate = self.text.split("name: GATE_FINAL", 1)[1]

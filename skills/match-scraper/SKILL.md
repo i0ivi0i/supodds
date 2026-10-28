@@ -30,7 +30,7 @@ metadata:
 ### 0.1 一眼看懂
 
 - **27 个端点** = 4 个核心 + 7 个亚盘 + 7 个大小球 + 7 个欧指 + 2 个全景；`eu_42.html` 占位不发请求，所以实际 **26 个请求**。
-- **22 家机构** = 21 个 Euro CID + 188Bet 的 42 槽位（188Bet 没有 Euro CID）；分 5 批核销。
+- **22 家机构** = 21 个 Euro CID + 188Bet 的 42 槽位（188Bet 没有 Euro CID）；分 5 批核销。**21 个 Euro CID 是名册，不是每次都满额**：核心 4 家（澳彩、皇冠、Bet365、平博）必须有，实到 **≥18/21** 才允许落 `.db`；少 1～3 家只记覆盖警告，不伪造行。
 - **7 张最终表**、0 视图、`球队基本情况` 14 列；`GATE_FINAL` 是唯一放行门。
 - **可选人看板**分六个栏目；**六道防错门**是广告、表格炸裂、死占位、22 家、初盘、时序；另加行数不截断。所有命令在 **Git Bash** 运行；Windows 绝对路径用引号包住；`py -3.13` 是本机 Python 启动器。
 
@@ -107,20 +107,25 @@ py -3.13 skills/match-scraper/scripts/ingest_spider.py \
 
 ### 3.2 22 家与空态
 
-法定 22 家、21 个 Euro CID、188Bet 独立槽位、5 批核销、完整 CID 表都在 `ingest-contract.md`。抓取后逐家布尔核销；缺失即采集遗漏，物理阻断。官方未开盘项写 `[官方未开盘]`；绝不静默漏报，绝不伪造一行。
+法定 22 家、21 个 Euro CID、188Bet 独立槽位、5 批核销、完整 CID 表都在 `ingest-contract.md`。抓取后逐家核销：
+- **核心 4 家**（80 澳彩、545 皇冠、281 Bet365、177 平博）缺失 → 失败，整场停线。
+- 核心齐、实到 **≥18/21** → 可落 `.db`；缺 1～3 家写入 `warnings`，不伪造行。
+- 实到 **<18** → 失败，停线。
+- `eu_12.html` 这类次级欧指变盘空壳 → `not_offered` 警告，不单独卡死；主时序以 `1x2d.js` 为准。
+官方未开盘项写 `[官方未开盘]`；绝不静默漏报，绝不伪造一行。
 
 ### 3.3 防串号与防假成功
 
 - URL 与 `matchId` 显式绑定；返回报文双向核验主队/客队；对阵不符立即丢弃重拉。
 - 特征词断言：亚盘 `Crown 亚让/让球`；欧指 `百家做市/返还率`；大小球 `高于/低于`。命中错位即阻断。
 - 按 manifest 或页面 meta 声明的编码解码；历史变盘页若声明 `gb2312`/`GB18030`，按 `GB18030`；不得用默认 UTF-8 强解汉字。
-- `1x2d.js` 必须含 21 家法定 CID 原始行并可反序列化；`analysis.html` 不得是只有表头的空壳；`odds.html` 必须含 `lineupObj`；`asian_odds.html` / `over_under.html` 必须是有效 JSON。
+- `1x2d.js` 必须含 **核心 4 家**（80/545/281/177）原始行、可反序列化，且实到 **≥18/21**；缺失的 1～3 家写入 `warnings`，不得补假行。`analysis.html` 不得是只有表头的空壳；`odds.html` 必须含 `lineupObj`；`asian_odds.html` / `over_under.html` 必须是有效 JSON。
 - 页面 `<tr>` 少于 2 且含动态脚本时，升阶 `browser_fetch(network_idle=true)`；仍空就判失败，不把空壳当成功。
 - 403/429：先退避；仍失败就升阶；不得把 WAF 页面写成正常数据。
 
 ### 3.4 失败的真实行为
 
-端点失败时，脚本仍写出 27 行 JSONL，`state=failed`，stdout 为 `{"ok":false,"failed":[...]}`，退出码 **0**。这是“采集完成但有失败端点”，不是成功；下游 `GATE_FINAL` 阻断晋升。
+端点失败时，脚本仍写出 27 行 JSONL，`state=failed`，stdout 为 `{"ok":false,"failed":[...]}`，退出码 **0**。这是“采集完成但有失败端点”，不是成功；下游 `GATE_FINAL` 阻断晋升。**只缺 1～3 个非核心欧指 CID 时，`1x2d.js` 保持 `state=ok`，把缺失写入 `warnings`；`eu_12.html` 空壳按 `not_offered` 记警告，不算失败。**
 
 致命异常或 JSONL 导出失败时，退出码 **1**，不写完整 JSONL。两种情况都保留现场；不把失败端点改写为 `[官方未开盘]`。
 
@@ -153,7 +158,7 @@ ETLX="C:/Users/home/AppData/Local/etlx/1.156.2-linking/etlx-windows-linking-amd6
 
 ### 4.2 GATE_FINAL
 
-必须断言：`final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`euro_rows=21`、`euro_history_rows>0`、`euro_history_sources>=2`、`asian_rows>0`、`asian_history_rows>0`、`ou_rows>0`、`ou_history_rows>0`、`team_info_rows=1+阵容+伤停`、`team_info_types=1`。`team_info_types` 只要求比赛信息 1 行、伤停大于 0；阵容是可选数据，0 行也算通过。`PRAGMA integrity_check` 必须 `ok`。
+必须断言：`final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`euro_rows>=18`（且核心 4 家 80/545/281/177 必须存在）、`euro_history_rows>0`、`euro_history_sources>=2`、`asian_rows>0`、`asian_history_rows>0`、`ou_rows>0`、`ou_history_rows>0`、`team_info_rows=1+阵容+伤停`、`team_info_types=1`。`team_info_types` 只要求比赛信息 1 行、伤停大于 0；阵容是可选数据，0 行也算通过。`PRAGMA integrity_check` 必须 `ok`。
 
 `球队基本情况` 固定 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`。主键为 `比赛ID + 数据类型 + 队伍 + 身份 + 姓名 + 号码`；比赛信息的 `号码` 用空串，阵容/伤停用真实号码。行顺序：比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。阵容是可选数据，有就写，没有可缺；伤停仍必须。
 
@@ -196,7 +201,7 @@ rm -rf data/.build
 ## 7. 异常与停线
 
 - Scrapling 四级升阶仍打不开：置顶「🚨 数据抓取通道受阻！」，报告失败并结束；不写残缺 memory，不静默。
-- 错位、场次缺失、22 家缺失、`GATE_FINAL` 失败：立即停线，保留原始错误与 `build.db`，不动旧最终库。
+- 错位、场次缺失、**22 家核销缺口或核心 4 家缺失**、`GATE_FINAL` 失败：立即停线，保留原始错误与 `build.db`，不动旧最终库。**只缺 1～3 个非核心欧指 CID 时按 `PARTIAL` 继续，不得当成 22 家完整。**
 - 赛程 Feed、单场抓取、ETLX、晋升四类失败都不跨场补洞；下一场仍按单场串行。
 - **主数据源**：titan007 球探。**阵容伤停双引擎**：FPL `injury-service.js`；Big Balls Sports Data API（`~/.gemini/config/bigballs_token.txt`）。**交叉验证**：Football-Data.org（`~/.gemini/config/football_data_tokens.json`）。
 - 赛后完场比分是 `post-review` 的职责；本工位只保留 Feed/单场通道指针，不在这里做复盘评分。

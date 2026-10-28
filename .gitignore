@@ -57,6 +57,9 @@ data/.build/
 data/.staging/
 # EvoOntology 稳定只读入口：指向当前分析场次的硬链接，不另存副本
 data/.evo/
+# EvoOntology 每场任务运行记录：本地审计，不进 Git
+.evoontology/tasks/
+.evoontology/trajectories/
 **/.quarantine/
 analysis/
 report/

@@ -228,8 +228,7 @@ SELECT
   coalesce(status, 0) AS status,
   state,
   empty_state
-FROM read_json_auto('{file}')
-WHERE endpoint_key <> 'polymarket.json';
+FROM read_json_auto('{file}');
 
 CREATE TEMP TABLE match_meta AS
 SELECT
@@ -1245,7 +1244,11 @@ WITH checks(gate, observed, expected) AS (
        AND (SELECT COUNT(DISTINCT "比赛ID") FROM DB."大小球变盘") = 1
       THEN 1 ELSE 0
     END, 1
-  UNION ALL SELECT 'euro_rows', (SELECT COUNT(*) FROM DB."欧指"), 21
+  UNION ALL SELECT 'euro_rows_floor',
+    CASE WHEN (SELECT COUNT(*) FROM DB."欧指") >= 18 THEN 1 ELSE 0 END, 1
+  UNION ALL SELECT 'euro_core_anchors',
+    CASE WHEN (SELECT COUNT(DISTINCT "机构编号") FROM DB."欧指"
+               WHERE "机构编号" IN (80, 545, 281, 177)) = 4 THEN 1 ELSE 0 END, 1
   UNION ALL SELECT 'euro_history_rows',
     CASE WHEN (SELECT COUNT(*) FROM DB."欧指变盘") > 0 THEN 1 ELSE 0 END, 1
   UNION ALL SELECT 'euro_history_sources',
