@@ -30,7 +30,7 @@ metadata:
 ### 0.1 一眼看懂
 
 - **27 个端点** = 4 个核心 + 7 个亚盘 + 7 个大小球 + 7 个欧指 + 2 个全景；`eu_42.html` 占位不发请求，所以实际 **26 个请求**。
-- **22 家机构** = 21 个 Euro CID + 188Bet 的 42 槽位（188Bet 没有 Euro CID）；分 5 批核销。**21 个 Euro CID 是名册，不是每次都满额**：核心 4 家（澳彩、皇冠、Bet365、平博）必须有，实到 **≥18/21** 才允许落 `.db`；少 1～3 家只记覆盖警告，不伪造行。
+- **22 家机构**：完整名册、5 批核销与 42 槽位见 `references/ingest-contract.md`；本文件不复制 CID 或机构名。**21 个 Euro CID 是名册，不是每次都满额**：核心 4 家必须有，实到 **≥18/21** 才允许落 `.db`；少 1～3 家只记覆盖警告，不伪造行。
 - **7 张最终表**、0 视图、`球队基本情况` 14 列；`GATE_FINAL` 是唯一放行门。
 - **可选人看板**分六个栏目；**六道防错门**是广告、表格炸裂、死占位、22 家、初盘、时序；另加行数不截断。所有命令在 **Git Bash** 运行；Windows 绝对路径用引号包住；`py -3.13` 是本机 Python 启动器。
 
@@ -101,14 +101,14 @@ py -3.13 skills/match-scraper/scripts/ingest_spider.py \
   --output "$JSONL" [--force]
 ```
 
-脚本按 `config/endpoints.json` 发 **26 个请求**（`eu_42.html` 是 188Bet 的无欧指占位，`skip_request=true`，不单发请求），导出 **27 行**分析端点 JSONL；`ah_42.html`、`ou_42.html` 仍按 42 槽位正常抓取。机器契约只有 `config/endpoints.json`；完整键表在 `ingest-contract.md`。
+脚本按 `config/endpoints.json` 发 **26 个请求**（`eu_42.html` 是无欧指占位，`skip_request=true`，不单发请求），导出 **27 行**分析端点 JSONL；`ah_42.html`、`ou_42.html` 仍按 42 槽位正常抓取。机器契约只有 `config/endpoints.json`；完整键表在 `ingest-contract.md`。
 
 同一输出文件 10 分钟内、且缓存是同一场比赛的完整 27 行时自动跳过（输出 `ok:false` + `cached:true`）；只有主人明确说“重新分析”才加 `--force`。不得用旧盘口补新场。
 
 ### 3.2 22 家与空态
 
-法定 22 家、21 个 Euro CID、188Bet 独立槽位、5 批核销、完整 CID 表都在 `ingest-contract.md`。抓取后逐家核销：
-- **核心 4 家**（80 澳彩、545 皇冠、281 Bet365、177 平博）缺失 → 失败，整场停线。
+法定 22 家、21 个 Euro CID、独立 42 槽位、5 批核销、完整 CID 表都在 `ingest-contract.md`。抓取后逐家核销：
+- **核心 4 家**见 `ingest-contract.md`；缺失 → 失败，整场停线。
 - 核心齐、实到 **≥18/21** → 可落 `.db`；缺 1～3 家写入 `warnings`，不伪造行。
 - 实到 **<18** → 失败，停线。
 - `eu_12.html` 这类次级欧指变盘空壳 → `not_offered` 警告，不单独卡死；主时序以 `1x2d.js` 为准。
@@ -119,7 +119,7 @@ py -3.13 skills/match-scraper/scripts/ingest_spider.py \
 - URL 与 `matchId` 显式绑定；返回报文双向核验主队/客队；对阵不符立即丢弃重拉。
 - 特征词断言：亚盘 `Crown 亚让/让球`；欧指 `百家做市/返还率`；大小球 `高于/低于`。命中错位即阻断。
 - 按 manifest 或页面 meta 声明的编码解码；历史变盘页若声明 `gb2312`/`GB18030`，按 `GB18030`；不得用默认 UTF-8 强解汉字。
-- `1x2d.js` 必须含 **核心 4 家**（80/545/281/177）原始行、可反序列化，且实到 **≥18/21**；缺失的 1～3 家写入 `warnings`，不得补假行。`analysis.html` 不得是只有表头的空壳；`odds.html` 必须含 `lineupObj`；`asian_odds.html` / `over_under.html` 必须是有效 JSON。
+- `1x2d.js` 必须含 **名册核心 4 家**原始行、可反序列化，且实到 **≥18/21**；缺失的 1～3 家写入 `warnings`，不得补假行。`analysis.html` 不得是只有表头的空壳；`odds.html` 必须含 `lineupObj`；`asian_odds.html` / `over_under.html` 必须是有效 JSON。
 - 页面 `<tr>` 少于 2 且含动态脚本时，升阶 `browser_fetch(network_idle=true)`；仍空就判失败，不把空壳当成功。
 - 403/429：先退避；仍失败就升阶；不得把 WAF 页面写成正常数据。
 
@@ -158,7 +158,7 @@ ETLX="C:/Users/home/AppData/Local/etlx/1.156.2-linking/etlx-windows-linking-amd6
 
 ### 4.2 GATE_FINAL
 
-必须断言：`final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`euro_rows>=18`（且核心 4 家 80/545/281/177 必须存在）、`euro_history_rows>0`、`euro_history_sources>=2`、`asian_rows>0`、`asian_history_rows>0`、`ou_rows>0`、`ou_history_rows>0`、`team_info_rows=1+阵容+伤停`、`team_info_types=1`。`team_info_types` 只要求比赛信息 1 行、伤停大于 0；阵容是可选数据，0 行也算通过。`PRAGMA integrity_check` 必须 `ok`。
+必须断言：`final_table_total=7`、`final_table_count=7`、`final_view_count=0`、`final_identity_match=1`、`euro_rows>=18`（且名册核心 4 家必须存在）、`euro_history_rows>0`、`euro_history_sources>=2`、`asian_rows>0`、`asian_history_rows>0`、`ou_rows>0`、`ou_history_rows>0`、`team_info_rows=1+阵容+伤停`、`team_info_types=1`。`team_info_types` 只要求比赛信息 1 行、伤停大于 0；阵容是可选数据，0 行也算通过。`PRAGMA integrity_check` 必须 `ok`。
 
 `球队基本情况` 固定 14 列：`比赛ID`、`数据类型`、`联赛`、`主队`、`客队`、`开球时间`、`竞彩编号`、`销售日`、`队伍`、`身份`、`号码`、`姓名`、`位置`、`伤停原因`。主键为 `比赛ID + 数据类型 + 队伍 + 身份 + 姓名 + 号码`；比赛信息的 `号码` 用空串，阵容/伤停用真实号码。行顺序：比赛信息 → 主队首发 → 客队首发 → 主队替补 → 客队替补 → 主队伤停 → 客队伤停。阵容是可选数据，有就写，没有可缺；伤停仍必须。
 
@@ -195,7 +195,7 @@ rm -rf data/.build
 - **`--ai-targeted`**：`scrapling extract` CLI 必须带，过滤隐藏杂质与广告；本适配器 `ingest_spider.py` 没有该参数，用选择器下推达到同等效果。
 - **单并发**：同一域名单并发；基础延迟 1.0–3.0 秒随机抖动；AutoThrottle 自适应；403/429 指数退避 `2→4→8→16` 秒，封顶 15 秒（当前脚本 `autothrottle_max_delay`）。
 - **隐身**：`impersonate=safari184_ios`；UA 统一为 iPhone OS 18_4 / Safari 18.4；补 `Referer: https://m.titan007.com/analy/Analysis/{mid}.htm`；默认 HTTP/2，协议错误自动降级 HTTP/1.1（也可用 `--http1` 强制）；代理用 `--proxy` 或 `ALL_PROXY/HTTPS_PROXY/HTTP_PROXY`。
-- **防错位**：`parts[0]` 才是 CID，禁用 `parts[1]`；欧指列序主/平/客，亚盘主水/盘口/客水，大小球大水/盘口/小水；`matchId` 跨比赛隔离；`188Bet` 只走 42。
+- **防错位**：`parts[0]` 才是 CID，禁用 `parts[1]`；欧指列序主/平/客，亚盘主水/盘口/客水，大小球大水/盘口/小水；`matchId` 跨比赛隔离；42 槽位只走独立占位。
 - **不造假**：JSONL 必须来自真实响应；`chars` 与 `sha256/raw_sha256` 必须匹配；未开盘写 `[官方未开盘]`；不伪造伤停、赔率或链接。
 
 ## 7. 异常与停线

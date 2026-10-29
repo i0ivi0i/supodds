@@ -137,10 +137,10 @@ async def on_close(self):
 ## Coverage tiers versus success
 
 - The 21 Euro CIDs are a roster, not a demand that every source publish every match.
-- Four market anchors are mandatory: 80 Macauslot, 545 Crown, 281 Bet365, 177 Pinnacle.
+- Four market anchors are mandatory; their authoritative IDs and names live in `ingest-contract.md`.
 - Data admission requires at least 18 of 21 and all four anchors.
 - Missing non-core CIDs are recorded in JSONL `warnings`; never fabricate rows to satisfy 21.
-- Data admission is not analysis admission: `deep-analysis` still reconciles the 22-bookmaker roster and labels 18-20/21 as `PARTIAL`.
+- Data admission is not analysis admission: `deep-analysis` reads the same `coverage_status` contract and labels 18-20/21 as `PARTIAL`.
 
 ## Empty state versus success
 

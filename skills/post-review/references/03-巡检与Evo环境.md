@@ -55,7 +55,7 @@ RETURN_TO: 执行步骤 8.5
   - 检查是否有正式首发出炉或终盘剧烈异动的推演场次；
   - 启动临盘复核流水线：独家调度官方 Scrapling Spider/原生流水线礼貌排队直取（单域名单并发）最新微观首发与终盘流水；
   - **严禁只写单一 .md**：必须首先原子覆盖更新底层无损物理存证 `data/{销售日}/{matchId}.db`（最终七表；27 个分析端点回执与哈希留在抓取层 JSONL），再同步重新渲染可选人类可视化简报 `data/{销售日}/{matchId}.md`；
-  - **看数必经 EvoOntology**：大模型严禁直接使用 `read_file` 裸视海量原始长文本，必须且只能依托 EvoOntology 官方 MCP 工具（`browse_semantics` ➔ `resolve_ontology_task`）核销 22 家并按 mapping 路径全量提取微观活水数据；
+  - **看数必经 EvoOntology**：大模型严禁直接使用 `read_file` 裸视海量原始长文本，必须且只能依托 EvoOntology 官方 MCP 工具（`browse_semantics` ➔ `resolve_ontology_task`）按 `coverage_status` 核销，并按 mapping 路径全量提取微观活水数据；
   - 输入原「认知契约卡」与新批次，由大模型通盘复核，驱动状态机输出【维持原判】、【微调修正】或【物理熔断】；
   - 若出现网络抓取失败、字段缺失或时点冲突，置顶报警并记录待办，绝不伪造复核记录。
 - **执行分工**：刷新数据走 `skills/match-scraper`；复核推演走 `skills/deep-analysis` 的“方法校准与临盘复核（进入十步前）”；本技能只负责巡检触发、状态机与记录，不另写抓取脚本。
