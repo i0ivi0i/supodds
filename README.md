@@ -28,7 +28,7 @@
 - **拒绝黑盒玄学，回归做市本源**：从胜平负、让球与大小球的初盘和变动，逆向解构庄家如何诱买、阻热及控制风险；欧亚背离优先审让球防守底线，逆向线路移动（RLM）主动追查尖锐资金痕迹。
 - **乔布斯式乐团指挥家架构（Conductor Mindset）**：`AGENTS.md` 纯化为手持指挥棒的中央调度总控台，掌控全场节拍与质量防错（Poka-Yoke），绝不亲自手持乐器演奏；微调无损迁移具体采掘与排版细则至四大车间，原位留驻权威指挥令牌与零件托盘标准契约指针。
 - **全库零临时脚本硬铁律（Zero-Script Invariant）**：主仓库 100% 蜕变为纯 Agent 认知与知识库圣殿，杜绝任何全语种（`.py/.ps1/.js/.bat/.sh`）临时脚本与磁盘 `tmp_*` 暂存中转。
-- **全流程 MCP 机械臂闭环**：数据进货 100% 走 Scrapling 官方 API + 项目适配器 `ingest_spider.py`（单场 27 端点、22 家做市商字典），做市看数 100% 依托 EvoOntology 全量结构化解析，纯数学算力外挂宿主独立服务（Goto 2026 OO-EPC 去水 + Dixon-Coles 修正泊松），全量理论反思依托 Graphify 5.6MB 博弈图谱。
+- **全流程 MCP 机械臂闭环**：数据进货 100% 走 Scrapling 官方 API + 项目适配器 `ingest_spider.py`（单场 27 端点、22 家做市商字典），做市看数 100% 依托 EvoOntology 全量结构化解析，纯数学算力外挂宿主独立服务（Goto 2026 OO-EPC 去水；Dixon-Coles 泊松暂停使用），全量理论反思依托 Graphify 5.6MB 博弈图谱。
 
 ---
 
@@ -118,7 +118,7 @@ skills/
 | 车间工位 | 核心职责（高内聚） | 机械臂绑定与标准协议 | 工业标准出厂零件托盘（零耦合接口） |
 | :--- | :--- | :--- | :--- |
 | **工位 1：全权数据进货局**<br/>`skills/match-scraper` | 赛程索引抓取、27 个分析采集端点提取、22 家机构核销、单 IP 防封控频 | `Scrapling Spider` (`scripts/ingest_spider.py`) 导出 JSONL + `ETLX` 官方 `-file` 直接读取；模式一写 `meta.md` 赛程索引 | **零件托盘 1**：`data/{销售日}/meta.md` 赛程索引 + `data/{销售日}/{id}.db`（最终七表：球队基本情况/欧指/欧指变盘/亚盘/亚盘变盘/大小球/大小球变盘）+ 可选 `matchId.md` 人类简报 |
-| **工位 3：推演大脑总装局**<br/>`skills/deep-analysis` | 纯只读全量结构化数据、去水点概率测算、Dixon-Coles 泊松分布、10 步庄家博弈破译（主文件 ≤500 行；操作分册按需加载） | `evoontology` MCP（`start_ontology_task` ➔ `browse_semantics` ➔ 5 批 `resolve_ontology_task` ➔ `execute_ontology_query` ➔ `finish_ontology_task`；无工具调用熔断）<br/>`sports-math` MCP (`devig_oo_epc`, `poisson_dixon_coles`)<br/>`graphify` 知识图谱 | **零件托盘 3**：**四维不可篡改【认知契约卡】** + 纯推演单场结果（胜负平、让球、点概率、比分） |
+| **工位 3：推演大脑总装局**<br/>`skills/deep-analysis` | 纯只读全量结构化数据、去水点概率测算、10 步庄家博弈破译（主文件 ≤500 行；操作分册按需加载；泊松暂停） | `evoontology` MCP（`start_ontology_task` ➔ `browse_semantics` ➔ 5 批 `resolve_ontology_task` ➔ `execute_ontology_query` ➔ `finish_ontology_task`；无工具调用熔断）<br/>`sports-math` MCP (`devig_oo_epc`；`poisson_dixon_coles` 暂停)<br/>`graphify` 知识图谱 | **零件托盘 3**：**四维不可篡改【认知契约卡】** + 纯推演单场结果（胜负平、让球、点概率、比分） |
 | **工位 4：战报交付局**<br/>`skills/recommendation` | Poka-Yoke `Count(契约卡) ≡ N` 门禁、7 列表格拼装、Polymarket 真实链接核验、文末 2 串 1 优选 | 格式校验闸门（绝不折行、字段强校验、链接真实性）、原子化前置写入 memory | **零件托盘 4**：终端交付物（标准 7 列表格 + 文末【🎯 2 串 1 组合推荐】 + memory 审计底账） |
 | **工位 5：复盘审计局**<br/>`skills/post-review` | 真实赛果抓取、1:1 胜负平+让球双列真实对账、赛前无卡漏推红线报警、战法库反思进化 | `graphify` 错题反思导览 + 长期记忆库 (`MEMORY.md`) | **零件托盘 5**：真实完场对账单（含 ✅/❌/走水） + `LESSONS.md` 经验图谱自愈 |
 
@@ -159,7 +159,7 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **`scrapling`** | [D4Vinci/Scrapling](https://github.com/D4Vinci/Scrapling) | 官方原生数据采集通道 | Spider `scripts/ingest_spider.py`（27 个分析采集端点主路径；官方 `ItemList.to_jsonl()` 导出）<br/>MCP 仅作单端点诊断降级；支持 `impersonate="safari184_ios"`、三路端点参数分流与 Markdown 原生直出 |
 | **`evo-semantic`** | [ruc-datalab/EvoOntology](https://github.com/ruc-datalab/EvoOntology) | 专属双层做市看数只读语义与自进化状态机 | `browse_semantics`, `resolve_semantics`, `validate_semantics`, `evolution_status`, `confirm_trajectory_sources`<br/>5 批次核销法定 22 家做市商机位，Mapping 路径全量字段结构化提取与 Constraint 阻断对质，闭环 `TaskTrajectory` 自动进化 |
-| **`sports-math`** | [宿主独立微服务](file:///C:/Users/home/.gemini/services/sports-math) | 纯数学算力引擎 | `devig_oo_epc`, `poisson_dixon_coles`<br/>东京大学 Shota Goto (2026) 凸优化去水算法与 Dixon-Coles 修正泊松分布 |
+| **`sports-math`** | [宿主独立微服务](file:///C:/Users/home/.gemini/services/sports-math) | 纯数学算力引擎 | `devig_oo_epc`<br/>东京大学 Shota Goto (2026) 凸优化去水算法；Dixon-Coles 修正泊松暂停使用 |
 | **`graphify`** | [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) | 知识图谱与错题反思中枢 | `query_graph`, `get_node`, `shortest_path`, `god_nodes`, `get_community`, `get_neighbors`, `graph_stats`<br/>5.6MB 全息博弈图谱，支持三大战区调兵、疑难穿透、理论裁决与三重保鲜生命周期 |
 | **`skill-up-observer`** | [alibaba/skill-up](https://github.com/alibaba/skill-up) | 技能评测与演化观测器 | `mark_skill_invocation`, `write_observation_case`<br/>阿里巴巴官方 Agent 技能观测与回归用例沉淀体系 |
 | **`bigballs-sports-data`** | [Big Balls Data MCP](https://mcp.bigballsdata.com/mcp) | 球员微观体能与真实伤停 | `get_matches`, `get_standings`, `find_players`<br/>覆盖五大联赛与美职足的真实伤停与双赛体能负荷断崖核查 |

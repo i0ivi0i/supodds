@@ -27,7 +27,7 @@ metadata: { "emoji": "📊" }
       -> execute_ontology_query(task_id, query, event_id)
       -> finish_ontology_task(task_id, final_answer=..., status="completed")
 推演: devig_oo_epc(home_odds=..., draw_odds=..., away_odds=...)
-      poisson_dixon_coles(home_lambda=..., away_lambda=..., top_n=6)  # 仅辅助
+      # 泊松暂停：不调用 poisson_dixon_coles
 交接: comprehensive_assessment -> memory_summary
 ```
 
@@ -136,13 +136,13 @@ metadata: { "emoji": "📊" }
 
 每场比赛按以下 10 步依次分析，完整执行分析过程，输出单场推演结构化结果与【四维认知契约卡】（交付表由 `recommendation` 负责；主人明确要求查看过程时才展开单场分析过程）。
 
-**统一顺序**：1 基本面 → 2 伤停 → 3 泊松辅助（仅参考） → 4 欧指 → 5 亚盘 → 6 大小球 → 7 合理性 → 8 变动 → 9 关键点/疑点/矛盾 → 10 风险 → 交接 1 综合评估与推荐。十步均须保留；综合评估是十步后的输出，不另占一步。编号口径见上。
+**统一顺序**：1 基本面 → 2 伤停 → 3 泊松（暂停，固定写“不做泊松”） → 4 欧指 → 5 亚盘 → 6 大小球 → 7 合理性 → 8 变动 → 9 关键点/疑点/矛盾 → 10 风险 → 交接 1 综合评估与推荐。十步均须保留；综合评估是十步后的输出，不另占一步。编号口径见上。
 
 | 步骤 | 本步动作 | 产出 | 停线 |
 |---|---|---|---|
 | 第 1 步 基本面 | 核对身份、战意与可见事实；不补战绩 | 背景、战意、可见事实 | 身份不符或证据不足 |
 | 第 2 步 伤停 | 读阵容/伤停；未披露标“未核实” | 缺阵名单与影响 | 伤停未核实只标注，不停线 |
-| 第 3 步 泊松 | 能算才算；不算写“不做泊松” | 仅辅助；未算写“不做泊松” | 未算泊松不停线 |
+| 第 3 步 泊松 | **暂停使用**：固定写“不做泊松（用户决策：容易被庄家反向利用）”；不算、不补、不猜 | 不输出 λ/比分概率；不调用 `poisson_dixon_coles` | 不停线 |
 | 第 4 步 欧指 | 取初盘→变盘→最新；`devig_oo_epc`；查 RLM/诱买 | 初盘/变盘/最新与去水概率 | 时序断裂或欧指 BLOCKED；PARTIAL 必须列缺项并降信心 |
 | 第 5 步 亚盘 | 定盘口类型；看盘口+水位；7 家交叉 | 盘口类型、水位、阻诱 | 盘口数据缺失 |
 | 第 6 步 大小球 | 定盘口类型；看大/小水位；与欧亚交叉 | 盘口类型、水位、进球空间 | 大小球不可见 |
@@ -175,7 +175,7 @@ metadata: { "emoji": "📊" }
 
 **产出**：可被 `recommendation` 直接消费的 `announce.comprehensive_assessment` 与 `announce.memory_summary`；交接完成标志成立。
 
-**`announce.comprehensive_assessment` 字段名**：推荐方向（胜平负首选/次选、让球、大小球）、泊松辅助比分、OO-EPC 去水概率、**数据覆盖（FULL/PARTIAL + 实到/21 + 缺项）**、形态标记、认知留存、关键点/疑点/矛盾、信心度、风险。
+**`announce.comprehensive_assessment` 字段名**：推荐方向（胜平负首选/次选、让球、大小球）、泊松状态（暂停，固定未算）、OO-EPC 去水概率、**数据覆盖（FULL/PARTIAL + 实到/21 + 缺项）**、形态标记、认知留存、关键点/疑点/矛盾、信心度、风险。
 
 **`announce.memory_summary` 字段名**：
 
@@ -188,8 +188,8 @@ metadata: { "emoji": "📊" }
 - `probabilities`：home、draw、away、source
 - `mechanism`：graph_genes、contract_card、poisson
 - `contract_card`：selection_and_exclusion、key_decision、bookmaker_hypothesis、competing_explanation、net_payout_logic、evo_block、derivation_chain、key_points、doubts、contradictions、risks
-- `poisson`：status、lambda、top6
-- `lambda`：home、away
+- `poisson`：status、reason、lambda、top6（暂停时 status=未算，lambda/top6 留空）
+- `lambda`：home、away（暂停时均 null）
 - `falsifiers`：id、statement、metric、trigger、deadline、source
 - `premortem`：failed_because
 
