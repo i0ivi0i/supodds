@@ -87,7 +87,7 @@
 - **阶段 0：赛程索引**。主会话调用 `match-scraper` 模式一拉赛程，落 `data/{销售日}/meta.md`；主会话只读 `meta.md`，按开球时间、用户范围、编号/URL 做最小筛选并拼 `work_order`。索引未就绪不进入抓取；不判断实力、近况、自开盘或盘口。
 - **阶段 1：物理进货**。只搬数据，不思考盘赔，不定胜负。
 - **阶段 2：纯逻辑推演**。确认 `.db` 存在且过验；阶段 1 验收后由 `post-review` 建立 Evo 入口并跑只读探针，探针通过才读 `deep-analysis`；EvoOntology 只读看数。
-- **阶段 3：交付与封存**。`deep-analysis` 回传的 N 份 `announce` 必须先由主会话（唯一写者）校验每份 `ten_steps` **恰好 10 项且每项 `answer`/`evidence` 非空**；不足 10 项、空项或用 `...` 占位的，立即停线，不写卡、不组装表。校验通过后，把 N 份摘要与四维认知契约卡写入 `memory/{销售日}.md` 的 `## 深度分析`；随后 `recommendation` 只核验 `Count(契约卡) == N` 且每张卡 `ten_steps` 合格，并组装唯一 7 列表，不写卡、不改判。缺一场、缺字段、缺反证条件或工具调用接近上限时，只报缺失，不发表。
+- **阶段 3：交付与封存**。`deep-analysis` 回传的 N 份 `announce` 先由主会话（唯一写者）按 `skills/deep-analysis/references/03-裁决与交接.md` 的合同校验 `memory_summary.ten_steps`：10 项、每项非空、`...` 停线；不合格不写卡、不组装表。校验通过后，把 `announce.memory_summary` 原样写入 `memory/{销售日}.md` 的 `## 深度分析`，并写入四维认知契约卡；随后 `recommendation` 只核验卡数、`memory_summary.ten_steps` 存在且为 10 项、四维卡反证条件存在，不重新定义字段，并组装唯一 7 列表，不写卡、不改判。缺一场、缺字段、缺反证条件或工具调用接近上限时，只报缺失，不发表。
 
 **停线例**：用户问“今天买什么” → 路由阶段 0→1 → 本场 `data/{销售日}/{matchId}.db` 不存在或过验失败 → 硬闸门 6 触发 → 不读 `deep-analysis`、不报胜负 → 输出缺数据清单。
 
