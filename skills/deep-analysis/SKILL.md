@@ -173,15 +173,18 @@ metadata: { "emoji": "📊" }
 
 **失败动作**：`announce` 字段缺失，或夹带人类报告/原始盘口展示表 → 停线，回落槌工位修正。
 
-**产出**：可被 `recommendation` 直接消费的 `announce.comprehensive_assessment` 与 `announce.memory_summary`；交接完成标志成立。
+**产出**：可被 `recommendation` 直接消费的 `announce.comprehensive_assessment`、`announce.ten_steps` 与 `announce.memory_summary`；交接完成标志成立。
 
 **`announce.comprehensive_assessment` 字段名**：推荐方向（胜平负首选/次选、让球、大小球）、泊松状态（暂停，固定未算）、OO-EPC 去水概率、**数据覆盖（FULL/PARTIAL + 实到/21 + 缺项）**、形态标记、认知留存、关键点/疑点/矛盾、信心度、风险。
+
+**`announce.ten_steps` 硬门**：固定 10 项，顺序为 `1 基本面 → 2 伤停 → 3 泊松 → 4 欧指 → 5 亚盘 → 6 大小球 → 7 合理性 → 8 变动 → 9 关键点/三端 → 10 风险/反证`。每项必须有非空 `answer` 与 `evidence`；第 3 项固定 `answer: "不做泊松"`。少一项、空一项、用 `...` 占位，停线，不写卡、不交付。
 
 **`announce.memory_summary` 字段名**：
 
 - `card_version`
 - `identity`：matchId、league、homeTeam、awayTeam、kickoffTime、analysisTime
 - `data_ref`：db_path、db_sha256、odds_cutoff、devig、**coverage（FULL/PARTIAL + 实到/21 + 缺项）**、research
+- `ten_steps`：固定 10 项；每项 `step`、`name`、`answer`、`evidence`；第 3 项固定“不做泊松”
 - `decision`：context、primary、secondary、three_dimensions、probabilities、confidence
 - `context`：injury_verification、motivation、not_collected
 - `three_dimensions`：winner、margin、total_goals
